@@ -365,112 +365,119 @@ MainTab:CreateButton({
    Name = ";kill",
    Callback = function()
        if AlvoSelecionado ~= "" then
-           local Players = game:GetService("Players")
-           local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-           local ReplicatedStorage = game:GetService("ReplicatedStorage")
-           
-           local targetPlayer = nil
-           for _, player in pairs(Players:GetPlayers()) do
-               if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-                   targetPlayer = player
-                   break
-               end
-           end
-           
-           if targetPlayer then
-               local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
-               
-               if trafficCones then
-                   Rayfield:Notify({
-                       Title = "🔨 Punição Iniciada", 
-                       Content = "Teleportando props para " .. targetPlayer.Name .. ". Monitorando assentos...", 
-                       Duration = 3
-                   })
+    local Players = game:GetService("Players")
+    local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    
+    local targetPlayer = nil
+    for _, player in pairs(Players:GetPlayers()) do
+        if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+            targetPlayer = player
+            break
+        end
+    end
+    
+    if targetPlayer then
+        local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+        
+        if trafficCones then
+            Rayfield:Notify({
+                Title = "🔨 Punição Iniciada", 
+                Content = "Teleportando props para " .. targetPlayer.Name .. ". Monitorando assentos...", 
+                Duration = 3
+            })
 
-                   task.spawn(function()
-                       -- Controla se o comando de encerramento já foi enviado para evitar repetições
-                       local finalizado = false
+            -- CONTROLE DE THREAD: Derruba qualquer loop de kill anterior para limpar a memória do cliente
+            if _G.KillAtivo then 
+                _G.KillAtivo = false 
+                task.wait(0.1) 
+            end
+            _G.KillAtivo = true
 
-                       while targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-                           if finalizado then break end
+            task.spawn(function()
+                local finalizado = false
 
-                           local character = targetPlayer.Character
-                           local targetHRP = character.HumanoidRootPart
-                           local humanoid = character:FindFirstChildOfClass("Humanoid")
-                           
-                           if humanoid and humanoid.Health <= 0 then
-                               break
-                           end
-                           
-                           local destinoPunishCFrame = targetHRP.CFrame
-                           local alvoSentou = false
-                           
-                           -- CHECAGEM DE ASSENTO: Detecta se o alvo sentou
-                           if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
-                               destinoPunishCFrame = CFrame.new(1, -501, -1)
-                               alvoSentou = true
-                               
-                               -- Tenta desancorar a cadeira para garantir o deslocamento físico
-                               local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
-                               if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
-                                   pcall(function()
-                                       if cadeiraFisica.Anchored then
-                                           cadeiraFisica.Anchored = false
-                                       end
-                                   end)
-                               end
-                           end
-                           
-                           local props = trafficCones:GetChildren()
-                           
-                           if #props > 0 then
-                               for _, prop in pairs(props) do
-                                   if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
-                                   
-                                   local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
-                                   if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                       pcall(function()
-                                           setCFrameRemote:InvokeServer(destinoPunishCFrame)
-                                       end)
-                                   end
-                               end
-                           end
-                           
-                           -- REGRA DE OURO: Se o alvo sentou e os props foram disparados para o limbo, executa o encerramento do Cobalt
-                           if alvoSentou then
-                               finalizado = true
-                               task.wait(0.1) -- Pequena pausa para garantir o registro do teleporte no servidor antes de limpar
-                               
-                               -- Executa o encerramento idêntico ao gerado pelo Cobalt
-                               pcall(function()
-                                   local reFolder = ReplicatedStorage:FindFirstChild("RE")
-                                   local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
-                                   if clearEvent then
-                                       clearEvent:FireServer("ClearAllProps")
-                                   end
-                               end)
-                               
-                               break -- Encerra o loop completamente
-                           end
-                           
-                           task.wait(0.1) 
-                       end
-                       
-                       Rayfield:Notify({
-                           Title = "✅ Punição Concluída", 
-                           Content = "O alvo sentou, foi enviado ao limbo e os props foram limpos.", 
-                           Duration = 5
-                       })
-                   end)
-               else
-                   Rayfield:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
-               end
-           else
-               Rayfield:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
-           end
-       else
-           Rayfield:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
-       end
+                -- O loop agora checa se o comando continua ativo globalmente
+                while _G.KillAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                    if finalizado then break end
+
+                    local character = targetPlayer.Character
+                    local targetHRP = character.HumanoidRootPart
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    
+                    if humanoid and humanoid.Health <= 0 then
+                        break
+                    end
+                    
+                    local destinoPunishCFrame = targetHRP.CFrame
+                    local alvoSentou = false
+                    
+                    if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                        destinoPunishCFrame = CFrame.new(1, -501, -1)
+                        alvoSentou = true
+                        
+                        local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                        if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                            pcall(function()
+                                if cadeiraFisica.Anchored then
+                                    cadeiraFisica.Anchored = false
+                                end
+                            end)
+                        end
+                    end
+                    
+                    local props = trafficCones:GetChildren()
+                    
+                    if #props > 0 then
+                        for _, prop in pairs(props) do
+                            if not _G.KillAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                            
+                            local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                -- OTIMIZAÇÃO DE REDE: Dispara em paralelo para não travar a velocidade da thread principal
+                                task.spawn(function()
+                                    pcall(function()
+                                        setCFrameRemote:InvokeServer(destinoPunishCFrame)
+                                    end)
+                                end)
+                            end
+                        end
+                    end
+                    
+                    if alvoSentou then
+                        finalizado = true
+                        task.wait(0.1) 
+                        
+                        pcall(function()
+                            local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                            local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                            if clearEvent then
+                                clearEvent:FireServer("ClearAllProps")
+                            end
+                        end)
+                        
+                        break 
+                    end
+                    
+                    task.wait(0.1) 
+                end
+                
+                _G.KillAtivo = false
+                Rayfield:Notify({
+                    Title = "✅ Punição Concluída", 
+                    Content = "O alvo sentou, foi enviado ao limbo e os props foram limpos.", 
+                    Duration = 5
+                })
+            end)
+        else
+            Rayfield:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
+        end
+    else
+        Rayfield:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
+    end
+else
+    Rayfield:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
+            end
    end,
 })
 
