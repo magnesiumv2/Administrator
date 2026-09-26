@@ -263,91 +263,98 @@ MainTab:CreateButton({
    Name = ";punish",
    Callback = function()
        if AlvoSelecionado ~= "" then
-           local Players = game:GetService("Players")
-           local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-           
-           local targetPlayer = nil
-           for _, player in pairs(Players:GetPlayers()) do
-               if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-                   targetPlayer = player
-                   break
-               end
-           end
-           
-           if targetPlayer then
-               local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
-               
-               if trafficCones then
-                   Rayfield:Notify({
-                       Title = "🔨 Punição Iniciada", 
-                       Content = "Teleportando props. Se o alvo " .. targetPlayer.Name .. " sentar, a cadeira irá para o limbo.", 
-                       Duration = 3
-                   })
+    local Players = game:GetService("Players")
+    local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+    
+    local targetPlayer = nil
+    for _, player in pairs(Players:GetPlayers()) do
+        if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+            targetPlayer = player
+            break
+        end
+    end
+    
+    if targetPlayer then
+        local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+        
+        if trafficCones then
+            Rayfield:Notify({
+                Title = "🔨 Punição Iniciada", 
+                Content = "Teleportando props. Se o alvo " .. targetPlayer.Name .. " sentar, a cadeira irá para o limbo.", 
+                Duration = 3
+            })
 
-                   task.spawn(function()
-                       while targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-                           
-                           local character = targetPlayer.Character
-                           local targetHRP = character.HumanoidRootPart
-                           local humanoid = character:FindFirstChildOfClass("Humanoid")
-                           
-                           if humanoid and humanoid.Health <= 0 then
-                               break
-                           end
-                           
-                           -- VARIÁVEL EXCLUSIVA DO PUNISH: Isola para não interferir na velocidade do ;kick
-                           local destinoPunishCFrame = targetHRP.CFrame
-                           
-                           -- CHECAGEM DA CADEIRA: Verifica se o jogador está sentado e localiza o objeto físico da cadeira
-                           if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
-                               destinoPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
-                               
-                               -- Se encontrarmos a cadeira exata via engine, aplicamos o teleporte nela também
-                               local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
-                               if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
-                                   pcall(function()
-                                       -- Se a cadeira estiver ancorada pelo mapa, desancora temporariamente para permitir o teleporte por física do prop
-                                       if cadeiraFisica.Anchored then
-                                           cadeiraFisica.Anchored = false
-                                       end
-                                   end)
-                               end
-                           end
-                           
-                           local props = trafficCones:GetChildren()
-                           
-                           if #props > 0 then
-                               for _, prop in pairs(props) do
-                                   if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
-                                   
-                                   local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
-                                   if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                       pcall(function()
-                                           -- Envia o prop usando a coordenada exclusiva do punish
-                                           setCFrameRemote:InvokeServer(destinoPunishCFrame)
-                                       end)
-                                   end
-                               end
-                           end
-                           
-                           task.wait(0.1) 
-                       end
-                       
-                       Rayfield:Notify({
-                           Title = "✅ Punição Concluída", 
-                           Content = "Punição encerrada com sucesso.", 
-                           Duration = 5
-                       })
-                   end)
-               else
-                   Rayfield:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
-               end
-           else
-               Rayfield:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
-           end
-       else
-           Rayfield:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
-       end
+            -- CONTROLE DE THREAD: Cancela execuções anteriores deste mesmo comando para não acumular loops na memória
+            if _G.PunishAtivo then 
+                _G.PunishAtivo = false 
+                task.wait(0.1) -- Tempo seguro para o loop anterior fechar
+            end
+            _G.PunishAtivo = true
+
+            task.spawn(function()
+                -- O loop agora monitora se a variável global continua ativa
+                while _G.PunishAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                    
+                    local character = targetPlayer.Character
+                    local targetHRP = character.HumanoidRootPart
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    
+                    if humanoid and humanoid.Health <= 0 then
+                        break
+                    end
+                    
+                    local destinoPunishCFrame = targetHRP.CFrame
+                    
+                    if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                        destinoPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
+                        
+                        local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                        if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                            pcall(function()
+                                if cadeiraFisica.Anchored then
+                                    cadeiraFisica.Anchored = false
+                                end
+                            end)
+                        end
+                    end
+                    
+                    local props = trafficCones:GetChildren()
+                    
+                    if #props > 0 then
+                        for _, prop in pairs(props) do
+                            if not _G.PunishAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                            
+                            local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                -- OTANIZAÇÃO DE REDE: Dispara o Invoke em paralelo para não travar a fila do loop principal
+                                task.spawn(function()
+                                    pcall(function()
+                                        setCFrameRemote:InvokeServer(destinoPunishCFrame)
+                                    end)
+                                end)
+                            end
+                        end
+                    end
+                    
+                    task.wait(0.1) 
+                end
+                
+                _G.PunishAtivo = false
+                Rayfield:Notify({
+                    Title = "✅ Punição Concluída", 
+                    Content = "Punição encerrada com sucesso.", 
+                    Duration = 5
+                })
+            end)
+        else
+            Rayfield:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
+        end
+    else
+        Rayfield:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
+    end
+else
+    Rayfield:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
+            end
    end,
 })
 
