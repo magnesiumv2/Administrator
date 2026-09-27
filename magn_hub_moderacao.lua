@@ -98,8 +98,6 @@ MainTab:CreateButton({
     end
 
     if target and target ~= LocalPlayer then
-        Rayfield:Notify({Title = "Ataque Iniciado", Content = "Executando fling em: " .. target.Name, Duration = 3, Image = "swords"})
-        
         if _G.FlingAtivo then 
             _G.FlingAtivo = false 
             task.wait(0.05) 
@@ -127,8 +125,8 @@ MainTab:CreateButton({
             local Ball = ServerBalls:WaitForChild("Soccer" .. LocalPlayer.Name, 5)
 
             if Ball and Ball:IsA("BasePart") then
-                Ball.CanCollide = false
-                Ball.Massless = true
+                Ball.CanCollide = true 
+                Ball.Massless = false   
                 
                 for _, child in pairs(Ball:GetChildren()) do
                     if child:IsA("BodyVelocity") or child:IsA("BodyAngularVelocity") or child:IsA("ForceField") then
@@ -143,23 +141,23 @@ MainTab:CreateButton({
 
                     workspace.CurrentCamera.CameraSubject = thum
                     
-                    local MAX_VELOCITY = Vector3.new(30000, 30000, 30000)
+                    local FORCA_LINEAR = Vector3.new(28000, 28000, 28000)
+                    local FORCA_ANGULAR = Vector3.new(28000, 28000, 28000)
+                    local ultimoCharacterAlvo = tchar
 
-                    while _G.FlingAtivo and thum.Health > 0 and tchar:IsDescendantOf(workspace) and target.Parent == Players do
+                    while _G.FlingAtivo and tchar:IsDescendantOf(workspace) and target.Parent == Players and tchar == ultimoCharacterAlvo do
                         if not tRoot then break end
                         
-                        for _, v in pairs(tchar:GetDescendants()) do
-                            if not _G.FlingAtivo or thum.Health <= 0 then break end
-                            
-                            if v:IsA("BasePart") and not v.Anchored and v.Name ~= "HumanoidRootPart" then
-                                Ball.CFrame = v.CFrame * CFrame.Angles(math.rad(math.random(-180, 180)), math.rad(math.random(-180, 180)), math.rad(math.random(-180, 180)))
-                                Ball.AssemblyLinearVelocity = MAX_VELOCITY
-                                Ball.AssemblyAngularVelocity = MAX_VELOCITY
-                                
-                                task.wait(1/60)
-                            end
-                        end
-                        task.wait()
+                        Ball.CFrame = tRoot.CFrame * CFrame.Angles(
+                            math.rad(math.random(-180, 180)), 
+                            math.rad(math.random(-180, 180)), 
+                            math.rad(math.random(-180, 180))
+                        )
+                        
+                        Ball.AssemblyLinearVelocity = FORCA_LINEAR
+                        Ball.AssemblyAngularVelocity = FORCA_ANGULAR
+                        
+                        task.wait(0.02) 
                     end
                     
                     pcall(function()
@@ -167,15 +165,10 @@ MainTab:CreateButton({
                         Ball.AssemblyAngularVelocity = Vector3.zero
                     end)
                     
-                    -- REMOVIDO: O comando que teleportava você de volta para a posição inicial foi deletado daqui
                     workspace.CurrentCamera.CameraSubject = hum
                 end
-            else
-                Rayfield:Notify({Title = "Erro", Content = "Bola de futebol não localizada.", Duration = 3})
             end
-            
             _G.FlingAtivo = false
-            Rayfield:Notify({Title = "Ataque Concluído", Content = "Fling encerrado com sucesso.", Duration = 3})
         end)
     end
             end
