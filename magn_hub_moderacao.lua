@@ -674,7 +674,7 @@ if LocalPlayer.UserId == ID_DONO then
        end,
     })
 
-    MainTab:AddButton({
+    MainTab:CreateButton({
             Name = ";InternetError",
             Callback = function()
                 local EnviandoPacotes = true
