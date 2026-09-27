@@ -704,7 +704,8 @@ for i = 1, QuantidadeThreads do
             end
         end
     end)
-                end,
+                end
+            end,
         })
 
 MainTab:CreateButton({
