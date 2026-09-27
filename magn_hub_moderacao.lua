@@ -88,96 +88,97 @@ MainTab:CreateButton({
    Name = ";fling",
    Callback = function()
        if AlvoSelecionado ~= "" then
-            local target = nil
-            for _, p in pairs(Players:GetPlayers()) do
-                if string.lower(p.Name):match("^" .. string.lower(AlvoSelecionado)) or 
-                   (p.DisplayName and string.lower(p.DisplayName):match("^" .. string.lower(AlvoSelecionado))) then
-                    target = p
-                    break
-                end
-            end
+    local target = nil
+    for _, p in pairs(Players:GetPlayers()) do
+        if string.lower(p.Name):match("^" .. string.lower(AlvoSelecionado)) or 
+           (p.DisplayName and string.lower(p.DisplayName):match("^" .. string.lower(AlvoSelecionado))) then
+            target = p
+            break
+        end
+    end
 
-            if target and target ~= LocalPlayer then
-                Rayfield:Notify({Title = "Ataque Iniciado", Content = "Executando fling em: " .. target.Name, Duration = 3, Image = "swords"})
-                
-                flingActive = false
-                task.wait(0.05)
-                flingActive = true
+    if target and target ~= LocalPlayer then
+        Rayfield:Notify({Title = "Ataque Iniciado", Content = "Executando fling em: " .. target.Name, Duration = 3, Image = "swords"})
+        
+        if _G.FlingAtivo then 
+            _G.FlingAtivo = false 
+            task.wait(0.05) 
+        end
+        _G.FlingAtivo = true
 
-                task.spawn(function()
-                    local char = LocalPlayer.Character
-                    local root = char and char:FindFirstChild("HumanoidRootPart")
-                    local hum = char and char:FindFirstChildOfClass("Humanoid")
-                    local originalCFrame = root and root.CFrame
-                    local backpack = LocalPlayer:WaitForChild("Backpack")
-                    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
+        task.spawn(function()
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local backpack = LocalPlayer:WaitForChild("Backpack")
+            local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
 
-                    if not backpack:FindFirstChild("SoccerBall") then
-                        game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
-                    end
-                    repeat task.wait() until backpack:FindFirstChild("SoccerBall")
-                    backpack.SoccerBall.Parent = char
-                    repeat task.wait() until ServerBalls:FindFirstChild("Soccer" .. LocalPlayer.Name)
-                    char.SoccerBall.Parent = backpack
-                    local Ball = ServerBalls:FindFirstChild("Soccer" .. LocalPlayer.Name)
-
-                    Ball.CanCollide = false
-                    Ball.Massless = true
-                    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
-
-                    if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character:FindFirstChildOfClass("Humanoid") and target.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-                        local tchar = target.Character
-                        local thum = tchar:FindFirstChildOfClass("Humanoid")
-
-                        for _, child in pairs(Ball:GetChildren()) do
-                            if child:IsA("BodyVelocity") or child:IsA("BodyAngularVelocity") then
-                                child:Destroy()
-                            end
-                        end
-
-                        local bv = Instance.new("BodyVelocity")
-                        bv.Name = "FlingPower"
-                        bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
-                        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                        bv.P = 9e900
-                        bv.Parent = Ball
-
-                        local bav = Instance.new("BodyAngularVelocity")
-                        bav.Name = "FlingSpin"
-                        bav.AngularVelocity = Vector3.new(9e8, 9e8, 9e8)
-                        bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-                        bav.P = 9e900
-                        bav.Parent = Ball
-
-                        workspace.CurrentCamera.CameraSubject = thum
-                        
-                        while flingActive and thum.Health > 0 and tchar:IsDescendantOf(workspace) and target.Parent == Players do
-                            for _, v in pairs(tchar:GetDescendants()) do
-                                if not flingActive or thum.Health <= 0 then break end
-                                if v:IsA("BasePart") and not v.Anchored and v.Name ~= "HumanoidRootPart" then
-                                    Ball.CFrame = v.CFrame
-                                    Ball.Velocity = Vector3.new(9e8, 9e8, 9e8)
-                                    Ball.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
-                                    task.wait(1/2000)
-                                end
-                            end
-                            task.wait()
-                        end
-                        
-                        if bv then bv:Destroy() end
-                        if bav then bav:Destroy() end
-                        Ball.Velocity = Vector3.zero
-                        Ball.RotVelocity = Vector3.zero
-                        
-                        if root and originalCFrame then root.CFrame = originalCFrame end
-                        workspace.CurrentCamera.CameraSubject = hum
-                    else
-                        if root and originalCFrame then root.CFrame = originalCFrame end
-                    end
-                    flingActive = false
+            if not backpack:FindFirstChild("SoccerBall") and not char:FindFirstChild("SoccerBall") then
+                pcall(function()
+                    game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
                 end)
             end
-       end
+            
+            local ferramenta = backpack:FindFirstChild("SoccerBall") or char:FindFirstChild("SoccerBall")
+            if ferramenta and ferramenta.Parent == backpack then
+                ferramenta.Parent = char
+            end
+            
+            local Ball = ServerBalls:WaitForChild("Soccer" .. LocalPlayer.Name, 5)
+
+            if Ball and Ball:IsA("BasePart") then
+                Ball.CanCollide = false
+                Ball.Massless = true
+                
+                for _, child in pairs(Ball:GetChildren()) do
+                    if child:IsA("BodyVelocity") or child:IsA("BodyAngularVelocity") or child:IsA("ForceField") then
+                        child:Destroy()
+                    end
+                end
+
+                if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character:FindFirstChildOfClass("Humanoid") then
+                    local tchar = target.Character
+                    local thum = tchar:FindFirstChildOfClass("Humanoid")
+                    local tRoot = tchar.HumanoidRootPart
+
+                    workspace.CurrentCamera.CameraSubject = thum
+                    
+                    local MAX_VELOCITY = Vector3.new(30000, 30000, 30000)
+
+                    while _G.FlingAtivo and thum.Health > 0 and tchar:IsDescendantOf(workspace) and target.Parent == Players do
+                        if not tRoot then break end
+                        
+                        for _, v in pairs(tchar:GetDescendants()) do
+                            if not _G.FlingAtivo or thum.Health <= 0 then break end
+                            
+                            if v:IsA("BasePart") and not v.Anchored and v.Name ~= "HumanoidRootPart" then
+                                Ball.CFrame = v.CFrame * CFrame.Angles(math.rad(math.random(-180, 180)), math.rad(math.random(-180, 180)), math.rad(math.random(-180, 180)))
+                                Ball.AssemblyLinearVelocity = MAX_VELOCITY
+                                Ball.AssemblyAngularVelocity = MAX_VELOCITY
+                                
+                                task.wait(1/60)
+                            end
+                        end
+                        task.wait()
+                    end
+                    
+                    pcall(function()
+                        Ball.AssemblyLinearVelocity = Vector3.zero
+                        Ball.AssemblyAngularVelocity = Vector3.zero
+                    end)
+                    
+                    -- REMOVIDO: O comando que teleportava você de volta para a posição inicial foi deletado daqui
+                    workspace.CurrentCamera.CameraSubject = hum
+                end
+            else
+                Rayfield:Notify({Title = "Erro", Content = "Bola de futebol não localizada.", Duration = 3})
+            end
+            
+            _G.FlingAtivo = false
+            Rayfield:Notify({Title = "Ataque Concluído", Content = "Fling encerrado com sucesso.", Duration = 3})
+        end)
+    end
+            end
    end,
 })
 
