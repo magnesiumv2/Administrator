@@ -33,7 +33,7 @@ end
 -- ============================================================
 -- 1. SELEÇÃO DE ALVO (Dropdown Nativo da WindUI)
 -- ============================================================
-local DropdownAlvos = ModeracaoLeve:Dropdown({
+local DropdownAlvos = MainTab:Dropdown({
     Title = "Selecionar Alvo",
     Options = obterListaJogadores(),
     Value = "", -- Começa sem nenhum alvo pré-definido
@@ -70,7 +70,7 @@ end)
 -- ============================================================
 -- 2. BOTÃO: ;fling (Adaptado)
 -- ============================================================
-ModeracaoLeve:Button({
+MainTab:Button({
     Title = ";fling",
     Callback = function()
         if AlvoSelecionado ~= "" then
@@ -168,7 +168,7 @@ ModeracaoLeve:Button({
     end
 })
 
-ModeracaoLeve:Button({
+MainTab:Button({
     Title = ";punish",
     Callback = function()
         if AlvoSelecionado ~= "" then
@@ -264,7 +264,7 @@ ModeracaoLeve:Button({
     end
 })
 
-ModeracaoLeve:Button({
+MainTab:Button({
     Title = ";kill",
     Callback = function()
         if AlvoSelecionado ~= "" then
@@ -383,7 +383,7 @@ ModeracaoLeve:Button({
     end
 })
 
-ModeracaoLeve:Button({
+MainTab:Button({
    Title = ";view",
    Callback = function()
        local Players = game:GetService("Players")
@@ -412,7 +412,7 @@ ModeracaoLeve:Button({
 })
 
 -- Botão Opcional para resetar a câmera de volta para si mesmo (;unview)
-ModeracaoLeve:Button({
+MainTab:Button({
    Title = ";unview",
    Callback = function()
        local LocalPlayer = game:GetService("Players").LocalPlayer
