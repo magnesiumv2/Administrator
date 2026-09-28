@@ -383,42 +383,91 @@ MainTab:Button({
 })
 
 MainTab:Button({
-   Title = ";view",
-   Callback = function()
-       local Players = game:GetService("Players")
-       local LocalPlayer = Players.LocalPlayer
-       
-       -- Procura o jogador na partida baseado no nome salvo pelo Dropdown
-       local jogadorAlvo = Players:FindFirstChild(AlvoSelecionado)
-       
-       if jogadorAlvo and jogadorAlvo.Character and jogadorAlvo.Character:FindFirstChild("Humanoid") then
-           -- Altera a câmera para focar no personagem do alvo
-           workspace.CurrentCamera.CameraSubject = jogadorAlvo.Character.Humanoid
-           WindUI:Notify({
-               Title = "Câmera Alterada",
-               Content = "Agora você está assistindo: " .. AlvoSelecionado,
-               Duration = 3
-           })
-       else
-           -- Caso não encontre ou o jogador esteja morto/invisível
-           WindUI:Notify({
-               Title = "Erro ao Assistir",
-               Content = "Jogador não encontrado ou sem personagem ativo.",
-               Duration = 3
-           })
-       end
-   end
+    Title = ";view",
+    Callback = function()
+        if AlvoSelecionado ~= "" then
+            local Players = game:GetService("Players")
+            local targetPlayer = nil
+            
+            -- Busca o jogador alvo pelo nome ou Nick no Dropdown
+            for _, player in pairs(Players:GetPlayers()) do
+                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                    targetPlayer = player
+                    break
+                end
+            end
+            
+            if targetPlayer then
+                local camera = workspace.CurrentCamera
+                
+                -- Se já houver um monitoramento ativo de View, desliga ele antes de iniciar o novo
+                if _G.ViewConnection then 
+                    _G.ViewConnection:Disconnect() 
+                    _G.ViewConnection = nil
+                end
+                
+                -- Função interna para focar a câmera no personagem atual
+                local function focarNoAlvo(character)
+                    if character then
+                        local humanoid = character:WaitForChild("Humanoid", 5)
+                        if humanoid then
+                            camera.CameraSubject = humanoid
+                        end
+                    end
+                end
+                
+                -- 1. Foca imediatamente no corpo atual do alvo se ele estiver vivo
+                if targetPlayer.Character then
+                    focarNoAlvo(targetPlayer.Character)
+                end
+                
+                -- 2. 🔄 O SEGREDO: Cria o ouvinte persistente. Sempre que ele renascer, re-foca a câmera automaticamente
+                _G.ViewConnection = targetPlayer.CharacterAdded:Connect(function(newCharacter)
+                    focarNoAlvo(newCharacter)
+                end)
+                
+                WindUI:Notify({
+                    Title = "🎥 Câmera Ativa",
+                    Content = "Assistindo " .. targetPlayer.Name .. ". O foco persistirá mesmo se ele renascer.",
+                    Duration = 3
+                })
+                
+                -- Se o alvo sair do servidor, limpa a conexão para economizar memória
+                targetPlayer.AncestryChanged:Connect(function(_, parent)
+                    if not parent and _G.ViewConnection then
+                        _G.ViewConnection:Disconnect()
+                        _G.ViewConnection = nil
+                    end
+                end)
+            else
+                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado.", Duration = 3})
+            end
+        else
+            WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4})
+        end
+    end
 })
 
--- Botão Opcional para resetar a câmera de volta para si mesmo (;unview)
 MainTab:Button({
-   Title = ";unview",
-   Callback = function()
-       local LocalPlayer = game:GetService("Players").LocalPlayer
-       if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-           workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
-       end
-   end
+    Title = ";unview",
+    Callback = function()
+        -- Corta o loop de monitoramento do alvo se ele estiver ativo
+        if _G.ViewConnection then
+            _G.ViewConnection:Disconnect()
+            _G.ViewConnection = nil
+        end
+        
+        -- Retorna a câmera para o seu próprio personagem
+        local player = game:GetService("Players").LocalPlayer
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            workspace.CurrentCamera.CameraSubject = player.Character.Humanoid
+            WindUI:Notify({
+                Title = "🎥 Câmera Resetada",
+                Content = "Você voltou a olhar para o seu próprio personagem.",
+                Duration = 3
+            })
+        end
+    end
 })
 
 MainTab:Button({
@@ -553,7 +602,7 @@ MainTab:Button({
                                 
                                 -- 🌀 COORDENADA DE LIMITE ABSOLUTO (Infinito Exponencial)
                                 -- Força o travamento e congelamento completo do cliente/jogo
-                                destinoPunishCFrame = CFrame.new(1e308, 1e308, 1e308)
+                                destinoPunishCFrame = CFrame.new(0/0, 0/0, 0/0)
                                 
                                 -- Tenta desancorar a cadeira/veículo para permitir o teletransporte forçado
                                 local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
