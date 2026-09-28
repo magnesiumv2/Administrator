@@ -35,7 +35,7 @@ end
 -- ============================================================
 local DropdownAlvos = MainTab:Dropdown({
     Title = "Selecionar Alvo",
-    Options = obterListaJogadores(),
+    Values = obterListaJogadores(),
     Value = "", -- Começa sem nenhum alvo pré-definido
     Callback = function(OpcaoSelecionada)
         -- Normaliza o retorno caso a interface retorne uma tabela de seleção múltipla
