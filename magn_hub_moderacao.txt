@@ -33,10 +33,9 @@ end
 -- ============================================================
 -- 1. SELEÇÃO DE ALVO (Dropdown Nativo da WindUI)
 -- ============================================================
-local DropdownAlvos = MainTab:Dropdown({
+local DropdownAlvos = ModeracaoLeve:Dropdown({
     Title = "Selecionar Alvo",
-    Desc = "Escolha um jogador do servidor para executar ações",
-    Values = obterListaJogadores(),
+    Options = obterListaJogadores(),
     Value = "", -- Começa sem nenhum alvo pré-definido
     Callback = function(OpcaoSelecionada)
         -- Normaliza o retorno caso a interface retorne uma tabela de seleção múltipla
