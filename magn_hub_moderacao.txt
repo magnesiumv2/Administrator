@@ -382,3 +382,42 @@ ModeracaoLeve:Button({
         end
     end
 })
+
+ModeracaoLeve:Button({
+   Title = ";view",
+   Callback = function()
+       local Players = game:GetService("Players")
+       local LocalPlayer = Players.LocalPlayer
+       
+       -- Procura o jogador na partida baseado no nome salvo pelo Dropdown
+       local jogadorAlvo = Players:FindFirstChild(AlvoSelecionado)
+       
+       if jogadorAlvo and jogadorAlvo.Character and jogadorAlvo.Character:FindFirstChild("Humanoid") then
+           -- Altera a câmera para focar no personagem do alvo
+           workspace.CurrentCamera.CameraSubject = jogadorAlvo.Character.Humanoid
+           WindUI:Notify({
+               Title = "Câmera Alterada",
+               Content = "Agora você está assistindo: " .. AlvoSelecionado,
+               Duration = 3
+           })
+       else
+           -- Caso não encontre ou o jogador esteja morto/invisível
+           WindUI:Notify({
+               Title = "Erro ao Assistir",
+               Content = "Jogador não encontrado ou sem personagem ativo.",
+               Duration = 3
+           })
+       end
+   end
+})
+
+-- Botão Opcional para resetar a câmera de volta para si mesmo (;unview)
+ModeracaoLeve:Button({
+   Title = ";unview",
+   Callback = function()
+       local LocalPlayer = game:GetService("Players").LocalPlayer
+       if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+           workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
+       end
+   end
+})
