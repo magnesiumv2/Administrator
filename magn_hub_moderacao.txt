@@ -13,7 +13,6 @@ local Window = WindUI:CreateWindow({
 
 -- 3. CRIAÇÃO DAS ABAS DE NAVEGAÇÃO LATERAIS
 local MainTab = Window:Tab({ Title = "Comandos", Icon = "sword" })
-local ModeracaoLeve = MainTab:Section({ Title = "Moderação Leve" })
 -- ============================================================
 -- 1. SISTEMA DO DROPDOWN AUTOMÁTICO (WINDUI)
 -- ==========================================================
