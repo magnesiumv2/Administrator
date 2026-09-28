@@ -554,6 +554,122 @@ MainTab:CreateButton({
    end,
 })
 
+MainTab:CreateButton({
+        Name = ";shutdownserver
+        Callback = function()
+            local player = game:GetService("Players").LocalPlayer
+if not player then return end
+
+local replicatedStorage = game:GetService("ReplicatedStorage")
+
+local character = player.Character or player.CharacterAdded:Wait()
+local rootpart = character:WaitForChild("HumanoidRootPart", 10)
+
+if not rootpart then 
+    Rayfield:Notify({Title = "Erro", Content = "HumanoidRootPart não encontrado.", Duration = 4})
+    return 
+end
+
+local re = replicatedStorage:FindFirstChild("RE")
+local toolRemote = re and re:FindFirstChild("1Too1l")
+
+if not toolRemote then 
+    Rayfield:Notify({Title = "Erro", Content = "Remote '1Too1l' não encontrado no Brookhaven.", Duration = 4})
+    return 
+end
+
+Rayfield:Notify({
+    Title = "Duplicação Iniciada",
+    Content = "Iniciando geração de 354 cópias de FireHose...",
+    Duration = 5
+})
+
+task.spawn(function()
+    -- Loop de 354 iterações para injetar as requisições assíncronas no buffer
+    for m = 1, 354 do
+        task.spawn(function()
+            if toolRemote:IsA("RemoteFunction") then
+                toolRemote:InvokeServer("PickingTools", "FireHose")
+            else
+                toolRemote:FireServer("PickingTools", "FireHose")
+            end
+        end)
+
+        task.spawn(function()
+            if toolRemote:IsA("RemoteFunction") then
+                toolRemote:InvokeServer("PickingTools", "FireHose")
+            else
+                toolRemote:FireServer("PickingTools", "FireHose")
+            end
+        end)
+
+        if m % 15 == 0 then task.wait(0.1) end
+    end
+end)
+
+task.wait(0.4)
+
+-- Aguarda a redefinição padrão do personagem para consolidar as instâncias na mochila
+player.CharacterRemoving:Wait()
+local newCharacter = player.CharacterAdded:Wait()
+local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
+local humanoid = newCharacter:WaitForChild("Humanoid", 15)
+
+if newRootPart and humanoid then
+    task.wait(0.7)
+    humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+    
+    -- TELEPORTE PARA COORDENADAS EXTREMAS:
+    -- Isola a física do seu personagem nas coordenadas distantes informadas
+    newRootPart.CFrame = CFrame.new(99999999, 999999, 99999999)
+    newRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+end
+
+Rayfield:Notify({
+    Title = "Processamento",
+    Content = "Teletransporte efetuado. Equipando e largando ferramentas...",
+    Duration = 4
+})
+task.wait(0.5)
+
+local backpack = player:WaitForChild("Backpack", 10)
+if backpack then
+    local items = backpack:GetChildren()
+    
+    -- EQUIPAMENTO SIMULTÂNEO: Equipamento em massa de forma rápida na rede local
+    for i = 1, #items do
+        local item = items[i]
+        if item:IsA("Tool") and item.Name == "FireHose" then
+            task.defer(function() 
+                item.Parent = newCharacter 
+            end)
+        end
+    end
+    
+    task.wait(0.3) -- Intervalo milimétrico para o motor físico consolidar o emparelhamento
+
+    -- SOLTURA EM MASSA (DROP ALL): Desconecta e larga os 354 itens no local isolado
+    local charChildren = newCharacter:GetChildren()
+    for j = 1, #charChildren do
+        local tool = charChildren[j]
+        if tool:IsA("Tool") and tool.Name == "FireHose" then
+            task.defer(function()
+                tool.Parent = workspace
+            end)
+        end
+    end
+end
+
+task.wait(0.5)
+
+Rayfield:Notify({
+    Title = "Concluído",
+    Content = "354 FireHoses dispersadas nas coordenadas remotas.",
+    Duration = 4
+})
+        end,
+    })
+
 -- ==========================================
 -- ABA 2: PAINEL ULTRA PRIVADO (Apenas se o ID for o do Dono)
 -- ==========================================
