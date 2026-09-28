@@ -1,0 +1,23 @@
+-- 1. CARREGAMENTO DA BIBLIOTECA (Link oficial bruto do repositório)
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+-- 2. CRIAÇÃO DA JANELA PRINCIPAL (Dashboard estilo Voidware)
+local Window = WindUI:CreateWindow({
+    Title = "restricted anonymous private panel",
+    SubTitle = "",
+    Icon = "terminal",                 -- Ícone exibido no topo (suporta Lucide Icons)
+    Author = "",          -- Nome do criador exibido no painel
+    Size = UDim2.fromOffset(550, 380), -- Tamanho inicial da interface na tela
+    Theme = "Dark"                     -- Tema escuro padrão da biblioteca
+})
+
+-- 3. CRIAÇÃO DAS ABAS DE NAVEGAÇÃO LATERAIS
+local TabPrincipal = Window:Tab({ Title = "Comandos", Icon = "sword" })
+local TabConfig    = Window:Tab({ Title = "Configurações", Icon = "settings" })
+
+-- Notificação na tela confirmando que a interface abriu
+WindUI:Notify({
+    Title = "Painel Inicializado",
+    Content = "A interface inicial foi gerada com sucesso!",
+    Duration = 4
+})
