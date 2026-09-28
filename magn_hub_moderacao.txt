@@ -13,14 +13,14 @@ local Window = WindUI:CreateWindow({
 
 -- 3. CRIAÇÃO DAS ABAS DE NAVEGAÇÃO LATERAIS
 local MainTab = Window:Tab({ Title = "Comandos", Icon = "sword" })
-local ModeracaoLeve = Comandos:Section({ Title = "Moderação Leve" })
-AlvoSelecionado = ""
+local ModeracaoLeve = Comandos:Section({ Title = "Moderação Leve" }
+-- ============================================================
+-- 1. SISTEMA DO DROPDOWN AUTOMÁTICO (WINDUI)
+-- ============================================================
 
--- Função que lista os jogadores do servidor
 local function obterListaJogadores()
     local lista = {}
-    for _, p in pairs(game:GetService("Players"):GetPlayers()) do
-        -- Opcional: Remove você mesmo da lista para evitar auto-ataque
+    for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
         if p ~= game:GetService("Players").LocalPlayer then
             table.insert(lista, p.Name)
         end
@@ -28,426 +28,196 @@ local function obterListaJogadores()
     return lista
 end
 
--- Cria o Dropdown alimentando a variável AlvoSelecionado automaticamente
 local DropdownAlvos = MainTab:Dropdown({
-   Name = "Selecionar Alvo",
-   Options = obterListaJogadores(),
-   CurrentOption = {""},
-   MultipleOptions = false,
-   Flag = "DropdownAlvoSelecionado",
-   Callback = function(OpcaoSelecionada)
-       -- Garante que o valor retornado seja transformado em String para seus botões funcionarem
-       if type(OpcaoSelecionada) == "table" then
-           AlvoSelecionado = OpcaoSelecionada[1] or ""
-       else
-           AlvoSelecionado = OpcaoSelecionada or ""
-       end
-   end,
+    Title = "Selecionar Alvo",
+    Values = obterListaJogadores(),
+    Callback = function(OpcaoSelecionada)
+        if type(OpcaoSelecionada) == "table" then
+            AlvoSelecionado = OpcaoSelecionada[1] or ""
+        else
+            AlvoSelecionado = OpcaoSelecionada or ""
+        end
+        print("Alvo atual definido para: " .. tostring(AlvoSelecionado))
+    end
 })
 
--- Atualiza a lista do menu automaticamente quando alguém entra ou sai do jogo
 local function atualizarDropdown()
-    DropdownAlvos:Refresh(obterListaJogadores(), true)
+    local novaLista = obterListaJogadores()
+    DropdownAlvos:Refresh(novaLista)
 end
 
-game:GetService("Players").PlayerAdded:Connect(atualizarDropdown)
-game:GetService("Players").PlayerRemoving:Connect(atualizarDropdown)
+game:GetService("Players").PlayerAdded:Connect(function()
+    task.wait(0.5)
+    atualizarDropdown()
+end)
 
-MainTab:Button({
-   Name = ";fling",
-   Callback = function()
-       if AlvoSelecionado ~= "" then
-    local target = nil
-    for _, p in pairs(Players:GetPlayers()) do
-        if string.lower(p.Name):match("^" .. string.lower(AlvoSelecionado)) or 
-           (p.DisplayName and string.lower(p.DisplayName):match("^" .. string.lower(AlvoSelecionado))) then
-            target = p
-            break
-        end
+game:GetService("Players").PlayerRemoving:Connect(function(player)
+    if AlvoSelecionado == player.Name then
+        AlvoSelecionado = ""
     end
+    atualizarDropdown()
+end)
 
-    if target and target ~= LocalPlayer then
-        if _G.FlingAtivo then 
-            _G.FlingAtivo = false 
-            task.wait(0.05) 
-        end
-        _G.FlingAtivo = true
 
-        task.spawn(function()
-            local char = LocalPlayer.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            local backpack = LocalPlayer:WaitForChild("Backpack")
-            local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
+-- ============================================================
+-- 2. BOTÃO: ;fling
+-- ============================================================
+MainTab:Button({
+    Title = ";fling",
+    Callback = function()
+        if AlvoSelecionado ~= "" then
+            local target = nil
+            for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+                if string.lower(p.Name):match("^" .. string.lower(AlvoSelecionado)) or 
+                   (p.DisplayName and string.lower(p.DisplayName):match("^" .. string.lower(AlvoSelecionado))) then
+                    target = p
+                    break
+                end
+            end
 
-            if not backpack:FindFirstChild("SoccerBall") and not char:FindFirstChild("SoccerBall") then
-                pcall(function()
-                    game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+            if target and target ~= game:GetService("Players").LocalPlayer then
+                if _G.FlingAtivo then 
+                    _G.FlingAtivo = false 
+                    task.wait(0.05) 
+                end
+                _G.FlingAtivo = true
+
+                task.spawn(function()
+                    local char = game:GetService("Players").LocalPlayer.Character
+                    local root = char and char:FindFirstChild("HumanoidRootPart")
+                    local hum = char and char:FindFirstChildOfClass("Humanoid")
+                    local backpack = game:GetService("Players").LocalPlayer:WaitForChild("Backpack")
+                    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+                    if not backpack:FindFirstChild("SoccerBall") and not char:FindFirstChild("SoccerBall") then
+                        pcall(function()
+                            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+                        end)
+                    end
+                    
+                    local ferramenta = backpack:FindFirstChild("SoccerBall") or char:FindFirstChild("SoccerBall")
+                    if ferramenta and ferramenta.Parent == backpack then
+                        ferramenta.Parent = char
+                    end
+                    
+                    local Ball = ServerBalls:WaitForChild("Soccer" .. game:GetService("Players").LocalPlayer.Name, 5)
+
+                    if Ball and Ball:IsA("BasePart") then
+                        Ball.CanCollide = true 
+                        Ball.Massless = false   
+                        
+                        for _, child in pairs(Ball:GetChildren()) do
+                            if child:IsA("BodyVelocity") or child:IsA("BodyAngularVelocity") or child:IsA("ForceField") then
+                                child:Destroy()
+                            end
+                        end
+
+                        if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character:FindFirstChildOfClass("Humanoid") then
+                            local tchar = target.Character
+                            local thum = tchar:FindFirstChildOfClass("Humanoid")
+                            local tRoot = tchar.HumanoidRootPart
+
+                            workspace.CurrentCamera.CameraSubject = thum
+                            
+                            local FORCA_LINEAR = Vector3.new(28000, 28000, 28000)
+                            local FORCA_ANGULAR = Vector3.new(28000, 28000, 28000)
+                            local ultimoCharacterAlvo = tchar
+
+                            while _G.FlingAtivo and tchar:IsDescendantOf(workspace) and target.Parent == game:GetService("Players") and tchar == ultimoCharacterAlvo do
+                                if not tRoot then break end
+                                
+                                Ball.CFrame = tRoot.CFrame * CFrame.Angles(
+                                    math.rad(math.random(-180, 180)), 
+                                    math.rad(math.random(-180, 180)), 
+                                    math.rad(math.random(-180, 180))
+                                )
+                                
+                                Ball.AssemblyLinearVelocity = FORCA_LINEAR
+                                Ball.AssemblyAngularVelocity = FORCA_ANGULAR
+                                
+                                task.wait(0.02) 
+                            end
+                            
+                            pcall(function()
+                                Ball.AssemblyLinearVelocity = Vector3.zero
+                                Ball.AssemblyAngularVelocity = Vector3.zero
+                            end)
+                            
+                            workspace.CurrentCamera.CameraSubject = hum
+                        end
+                    end
+                    _G.FlingAtivo = false
                 end)
             end
-            
-            local ferramenta = backpack:FindFirstChild("SoccerBall") or char:FindFirstChild("SoccerBall")
-            if ferramenta and ferramenta.Parent == backpack then
-                ferramenta.Parent = char
-            end
-            
-            local Ball = ServerBalls:WaitForChild("Soccer" .. LocalPlayer.Name, 5)
-
-            if Ball and Ball:IsA("BasePart") then
-                Ball.CanCollide = true 
-                Ball.Massless = false   
-                
-                for _, child in pairs(Ball:GetChildren()) do
-                    if child:IsA("BodyVelocity") or child:IsA("BodyAngularVelocity") or child:IsA("ForceField") then
-                        child:Destroy()
-                    end
-                end
-
-                if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character:FindFirstChildOfClass("Humanoid") then
-                    local tchar = target.Character
-                    local thum = tchar:FindFirstChildOfClass("Humanoid")
-                    local tRoot = tchar.HumanoidRootPart
-
-                    workspace.CurrentCamera.CameraSubject = thum
-                    
-                    local FORCA_LINEAR = Vector3.new(28000, 28000, 28000)
-                    local FORCA_ANGULAR = Vector3.new(28000, 28000, 28000)
-                    local ultimoCharacterAlvo = tchar
-
-                    while _G.FlingAtivo and tchar:IsDescendantOf(workspace) and target.Parent == Players and tchar == ultimoCharacterAlvo do
-                        if not tRoot then break end
-                        
-                        Ball.CFrame = tRoot.CFrame * CFrame.Angles(
-                            math.rad(math.random(-180, 180)), 
-                            math.rad(math.random(-180, 180)), 
-                            math.rad(math.random(-180, 180))
-                        )
-                        
-                        Ball.AssemblyLinearVelocity = FORCA_LINEAR
-                        Ball.AssemblyAngularVelocity = FORCA_ANGULAR
-                        
-                        task.wait(0.02) 
-                    end
-                    
-                    pcall(function()
-                        Ball.AssemblyLinearVelocity = Vector3.zero
-                        Ball.AssemblyAngularVelocity = Vector3.zero
-                    end)
-                    
-                    workspace.CurrentCamera.CameraSubject = hum
-                end
-            end
-            _G.FlingAtivo = false
-        end)
+        else
+            WindUI:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
+        end
     end
-            end
-   end,
 })
 
--- 4. O Botão que executa a função usando a variável atualizada
+
+-- ============================================================
+-- 3. BOTÃO: ;kick
+-- ============================================================
 MainTab:Button({
-   Name = ";kick",
-   Callback = function()
-       -- Verifica se um alvo foi digitado antes de rodar o código
-       if AlvoSelecionado ~= "" then
-           local Players = game:GetService("Players")
-           local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-           
-           -- Tenta encontrar o jogador por nome exato ou nome parcial
-           local targetPlayer = nil
-           for _, player in pairs(Players:GetPlayers()) do
-               if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-                   targetPlayer = player
-                   break
-               end
-           end
-           
-           if targetPlayer then
-               local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
-               
-               if trafficCones then
-                   Rayfield:Notify({
-                       Title = "🛡️ Ataque Iniciado", 
-                       Content = "Teleportando props continuamente para " .. targetPlayer.Name .. " até ele cair.", 
-                       Duration = 3
-                   })
-
-                   -- Inicia a thread em segundo plano para o loop infinito
-                   task.spawn(function()
-                       -- O loop roda enquanto o jogador alvo existir no jogo E tiver um corpo vivo no mapa
-                       while targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-                           
-                           local targetHRP = targetPlayer.Character.HumanoidRootPart
-                           local spawnCFrame = targetHRP.CFrame 
-                           local props = trafficCones:GetChildren()
-                           
-                           -- Se houver props na pasta, executa a varredura
-                           if #props > 0 then
-                               for _, prop in pairs(props) do
-                                   -- Verifica se o alvo ainda está vivo no meio da varredura para evitar erros
-                                   if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
-                                   
-                                   local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
-                                   if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                       pcall(function()
-                                           setCFrameRemote:InvokeServer(spawnCFrame)
-                                       end)
-                                   end
-                               end
-                           end
-                           
-                           -- Pausa crucial entre cada ciclo de varredura para não congelar o SEU jogo por excesso de processamento
-                           task.wait(0.1) 
-                       end
-                       
-                       -- Mensagem exibida quando o loop encerra (o jogador caiu ou saiu)
-                       Rayfield:Notify({
-                           Title = "✅ Alvo Eliminado", 
-                           Content = "O jogador não está mais no mapa. O loop foi encerrado.", 
-                           Duration = 5
-                       })
-                   end)
-               else
-                   Rayfield:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada em WorkspaceCom.", Duration = 3})
-               end
-           else
-               Rayfield:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
-           end
-       else
-           Rayfield:Notify({Title = "Aviso", Content = "Por favor, digite o nome de um alvo primeiro!", Duration = 3})
-       end
-   end,
-})
-
--- ==========================================
--- BOTÃO: ;punish (Versão Corrigida da Cadeira)
--- ==========================================
-MainTab:CreateButton({
-   Name = ";punish",
-   Callback = function()
-       if AlvoSelecionado ~= "" then
-    local Players = game:GetService("Players")
-    local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-    
-    local targetPlayer = nil
-    for _, player in pairs(Players:GetPlayers()) do
-        if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-            targetPlayer = player
-            break
-        end
-    end
-    
-    if targetPlayer then
-        local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
-        
-        if trafficCones then
-            Rayfield:Notify({
-                Title = "🔨 Punição Iniciada", 
-                Content = "Teleportando props. Se o alvo " .. targetPlayer.Name .. " sentar, a cadeira irá para o limbo.", 
-                Duration = 3
-            })
-
-            -- CONTROLE DE THREAD: Cancela execuções anteriores deste mesmo comando para não acumular loops na memória
-            if _G.PunishAtivo then 
-                _G.PunishAtivo = false 
-                task.wait(0.1) -- Tempo seguro para o loop anterior fechar
-            end
-            _G.PunishAtivo = true
-
-            task.spawn(function()
-                -- O loop agora monitora se a variável global continua ativa
-                while _G.PunishAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-                    
-                    local character = targetPlayer.Character
-                    local targetHRP = character.HumanoidRootPart
-                    local humanoid = character:FindFirstChildOfClass("Humanoid")
-                    
-                    if humanoid and humanoid.Health <= 0 then
-                        break
-                    end
-                    
-                    local destinoPunishCFrame = targetHRP.CFrame
-                    
-                    if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
-                        destinoPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
-                        
-                        local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
-                        if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
-                            pcall(function()
-                                if cadeiraFisica.Anchored then
-                                    cadeiraFisica.Anchored = false
-                                end
-                            end)
-                        end
-                    end
-                    
-                    local props = trafficCones:GetChildren()
-                    
-                    if #props > 0 then
-                        for _, prop in pairs(props) do
-                            if not _G.PunishAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
-                            
-                            local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
-                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                -- OTANIZAÇÃO DE REDE: Dispara o Invoke em paralelo para não travar a fila do loop principal
-                                task.spawn(function()
-                                    pcall(function()
-                                        setCFrameRemote:InvokeServer(destinoPunishCFrame)
-                                    end)
-                                end)
-                            end
-                        end
-                    end
-                    
-                    task.wait(0.1) 
+    Title = ";kick",
+    Callback = function()
+        if AlvoSelecionado ~= "" then
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            
+            local targetPlayer = nil
+            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                    targetPlayer = player
+                    break
                 end
+            end
+            
+            if targetPlayer then
+                local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
                 
-                _G.PunishAtivo = false
-                Rayfield:Notify({
-                    Title = "✅ Punição Concluída", 
-                    Content = "Punição encerrada com sucesso.", 
-                    Duration = 5
-                })
-            end)
-        else
-            Rayfield:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
-        end
-    else
-        Rayfield:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
-    end
-else
-    Rayfield:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
-            end
-   end,
-})
+                if trafficCones then
+                    WindUI:Notify({
+                        Title = "🛡️ Ataque Iniciado", 
+                        Content = "Teleportando props continuamente para " .. targetPlayer.Name, 
+                        Duration = 3
+                    })
 
--- ==========================================
--- BOTÃO: ;punish (Versão Final com Cobalt Integration)
--- ==========================================
-MainTab:CreateButton({
-   Name = ";kill",
-   Callback = function()
-       if AlvoSelecionado ~= "" then
-    local Players = game:GetService("Players")
-    local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    
-    local targetPlayer = nil
-    for _, player in pairs(Players:GetPlayers()) do
-        if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-            targetPlayer = player
-            break
-        end
-    end
-    
-    if targetPlayer then
-        local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
-        
-        if trafficCones then
-            Rayfield:Notify({
-                Title = "🔨 Punição Iniciada", 
-                Content = "Teleportando props para " .. targetPlayer.Name .. ". Monitorando assentos...", 
-                Duration = 3
-            })
-
-            -- CONTROLE DE THREAD: Derruba qualquer loop de kill anterior para limpar a memória do cliente
-            if _G.KillAtivo then 
-                _G.KillAtivo = false 
-                task.wait(0.1) 
-            end
-            _G.KillAtivo = true
-
-            task.spawn(function()
-                local finalizado = false
-
-                -- O loop agora checa se o comando continua ativo globalmente
-                while _G.KillAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-                    if finalizado then break end
-
-                    local character = targetPlayer.Character
-                    local targetHRP = character.HumanoidRootPart
-                    local humanoid = character:FindFirstChildOfClass("Humanoid")
-                    
-                    if humanoid and humanoid.Health <= 0 then
-                        break
-                    end
-                    
-                    local destinoPunishCFrame = targetHRP.CFrame
-                    local alvoSentou = false
-                    
-                    if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
-                        destinoPunishCFrame = CFrame.new(1, -501, -1)
-                        alvoSentou = true
-                        
-                        local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
-                        if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
-                            pcall(function()
-                                if cadeiraFisica.Anchored then
-                                    cadeiraFisica.Anchored = false
-                                end
-                            end)
-                        end
-                    end
-                    
-                    local props = trafficCones:GetChildren()
-                    
-                    if #props > 0 then
-                        for _, prop in pairs(props) do
-                            if not _G.KillAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                    task.spawn(function()
+                        while targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                            local targetHRP = targetPlayer.Character.HumanoidRootPart
+                            local spawnCFrame = targetHRP.CFrame 
+                            local props = trafficCones:GetChildren()
                             
-                            local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
-                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                -- OTIMIZAÇÃO DE REDE: Dispara em paralelo para não travar a velocidade da thread principal
-                                task.spawn(function()
-                                    pcall(function()
-                                        setCFrameRemote:InvokeServer(destinoPunishCFrame)
-                                    end)
-                                end)
+                            if #props > 0 then
+                                for _, prop in pairs(props) do
+                                    if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                    
+                                    local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                    if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                        pcall(function()
+                                            setCFrameRemote:InvokeServer(spawnCFrame)
+                                        end)
+                                    end
+                                end
                             end
+                            task.wait(0.1) 
                         end
-                    end
-                    
-                    if alvoSentou then
-                        finalizado = true
-                        task.wait(0.1) 
                         
-                        pcall(function()
-                            local reFolder = ReplicatedStorage:FindFirstChild("RE")
-                            local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
-                            if clearEvent then
-                                clearEvent:FireServer("ClearAllProps")
-                            end
-                        end)
-                        
-                        break 
-                    end
-                    
-                    task.wait(0.1) 
+                        WindUI:Notify({
+                            Title = "✅ Alvo Eliminado", 
+                            Content = "O jogador não está mais no mapa.", 
+                            Duration = 5
+                        })
+                    end)
+                else
+                    WindUI:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
                 end
-                
-                _G.KillAtivo = false
-                Rayfield:Notify({
-                    Title = "✅ Punição Concluída", 
-                    Content = "O alvo sentou, foi enviado ao limbo e os props foram limpos.", 
-                    Duration = 5
-                })
-            end)
-        else
-            Rayfield:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
-        end
-    else
-        Rayfield:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
-    end
-else
-    Rayfield:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
+            else
+                WindUI:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
             end
-   end
+        else
+            WindUI:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
+        end
+    end
 })
-
--- Notificação na tela confirmando que a interface abriu
-WindUI:Notify({
-    Title = "Painel Inicializado",
-    Content = "A interface inicial foi gerada com sucesso!",
-    Duration = 4
-})
-
