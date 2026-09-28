@@ -16,8 +16,10 @@ local MainTab = Window:Tab({ Title = "Comandos", Icon = "sword" })
 local ModeracaoLeve = Comandos:Section({ Title = "Moderação Leve" }
 -- ============================================================
 -- 1. SISTEMA DO DROPDOWN AUTOMÁTICO (WINDUI)
--- ============================================================
+-- ==========================================================
+local AlvoSelecionado = ""
 
+-- Função modificada para obter a lista de jogadores atuais
 local function obterListaJogadores()
     local lista = {}
     for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
@@ -28,10 +30,16 @@ local function obterListaJogadores()
     return lista
 end
 
+-- ============================================================
+-- 1. SELEÇÃO DE ALVO (Dropdown Nativo da WindUI)
+-- ============================================================
 local DropdownAlvos = MainTab:Dropdown({
     Title = "Selecionar Alvo",
+    Desc = "Escolha um jogador do servidor para executar ações",
     Values = obterListaJogadores(),
+    Value = "", -- Começa sem nenhum alvo pré-definido
     Callback = function(OpcaoSelecionada)
+        -- Normaliza o retorno caso a interface retorne uma tabela de seleção múltipla
         if type(OpcaoSelecionada) == "table" then
             AlvoSelecionado = OpcaoSelecionada[1] or ""
         else
@@ -41,11 +49,13 @@ local DropdownAlvos = MainTab:Dropdown({
     end
 })
 
+-- Função automatizada para sincronizar a lista interna com o componente visual
 local function atualizarDropdown()
     local novaLista = obterListaJogadores()
-    DropdownAlvos:Refresh(novaLista)
+    DropdownAlvos:Refresh(novaLista) -- Método nativo suportado pela WindUI
 end
 
+-- Conexões de eventos para atualizar a lista dinamicamente
 game:GetService("Players").PlayerAdded:Connect(function()
     task.wait(0.5)
     atualizarDropdown()
@@ -58,12 +68,12 @@ game:GetService("Players").PlayerRemoving:Connect(function(player)
     atualizarDropdown()
 end)
 
-
 -- ============================================================
--- 2. BOTÃO: ;fling
+-- 2. BOTÃO: ;fling (Adaptado)
 -- ============================================================
 MainTab:Button({
     Title = ";fling",
+    Desc = "Arremessa o jogador selecionado para fora do mapa usando a SoccerBall",
     Callback = function()
         if AlvoSelecionado ~= "" then
             local target = nil
@@ -150,74 +160,12 @@ MainTab:Button({
                 end)
             end
         else
-            WindUI:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
-        end
-    end
-})
-
-
--- ============================================================
--- 3. BOTÃO: ;kick
--- ============================================================
-MainTab:Button({
-    Title = ";kick",
-    Callback = function()
-        if AlvoSelecionado ~= "" then
-            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-            
-            local targetPlayer = nil
-            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-                    targetPlayer = player
-                    break
-                end
-            end
-            
-            if targetPlayer then
-                local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
-                
-                if trafficCones then
-                    WindUI:Notify({
-                        Title = "🛡️ Ataque Iniciado", 
-                        Content = "Teleportando props continuamente para " .. targetPlayer.Name, 
-                        Duration = 3
-                    })
-
-                    task.spawn(function()
-                        while targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-                            local targetHRP = targetPlayer.Character.HumanoidRootPart
-                            local spawnCFrame = targetHRP.CFrame 
-                            local props = trafficCones:GetChildren()
-                            
-                            if #props > 0 then
-                                for _, prop in pairs(props) do
-                                    if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
-                                    
-                                    local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
-                                    if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                        pcall(function()
-                                            setCFrameRemote:InvokeServer(spawnCFrame)
-                                        end)
-                                    end
-                                end
-                            end
-                            task.wait(0.1) 
-                        end
-                        
-                        WindUI:Notify({
-                            Title = "✅ Alvo Eliminado", 
-                            Content = "O jogador não está mais no mapa.", 
-                            Duration = 5
-                        })
-                    end)
-                else
-                    WindUI:Notify({Title = "Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
-                end
-            else
-                WindUI:Notify({Title = "Erro", Content = "Jogador não encontrado.", Duration = 3})
-            end
-        else
-            WindUI:Notify({Title = "Aviso", Content = "Por favor, selecione um alvo primeiro!", Duration = 3})
+            -- Notificação visual nativa da WindUI para quando o botão for clicado sem um alvo ativo
+            WindUI:Notify({
+                Title = "Aviso do Sistema",
+                Content = "Por favor, selecione um alvo primeiro no Dropdown!",
+                Duration = 4
+            })
         end
     end
 })
