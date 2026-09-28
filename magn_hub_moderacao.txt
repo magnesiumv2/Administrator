@@ -424,7 +424,6 @@ MainTab:Button({
 
 MainTab:Button({
     Title = ";explodeserver",
-    Desc = "Executa o ataque DoS usando FireHose e duplica os itens no processo",
     Callback = function()
         local player = game:GetService("Players").LocalPlayer
         if not player then return end
