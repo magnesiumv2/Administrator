@@ -690,7 +690,7 @@ MainTab:Button({
 local LoopLagAtivo = false
 
 MainTab:Button({
-   Name = ";lag",
+   Title = ";lag",
    Callback = function()
        -- Se o loop já estiver rodando, evita criar outro por cima
        if LoopLagAtivo then return end
@@ -743,7 +743,7 @@ MainTab:Button({
 })
 
 MainTab:Button({
-   Name = ";unlag",
+   Title = ";unlag",
    Callback = function()
        -- Desativa a variável, o que força o loop do botão acima a quebrar (break)
        LoopLagAtivo = false
