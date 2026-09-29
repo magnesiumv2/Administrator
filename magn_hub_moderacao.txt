@@ -70,101 +70,85 @@ end)
 -- 2. BOTÃO: ;fling (Adaptado)
 -- ============================================================
 MainTab:Button({
-    Title = ";fling",
-    Callback = function()
-        if AlvoSelecionado ~= "" then
-            local target = nil
-            for _, p in pairs(game:GetService("Players"):GetPlayers()) do
-                if string.lower(p.Name):match("^" .. string.lower(AlvoSelecionado)) or 
-                   (p.DisplayName and string.lower(p.DisplayName):match("^" .. string.lower(AlvoSelecionado))) then
-                    target = p
-                    break
-                end
-            end
+   Title = ";fling",
+   Callback = function()
+       -- 1. Verifica se existe um alvo selecionado na sua variável global
+       if not AlvoSelecionado or AlvoSelecionado == "" then
+           return
+       end
 
-            if target and target ~= game:GetService("Players").LocalPlayer then
-                if _G.FlingAtivo then 
-                    _G.FlingAtivo = false 
-                    task.wait(0.05) 
-                end
-                _G.FlingAtivo = true
-
-                task.spawn(function()
-                    local char = game:GetService("Players").LocalPlayer.Character
-                    local root = char and char:FindFirstChild("HumanoidRootPart")
-                    local hum = char and char:FindFirstChildOfClass("Humanoid")
-                    local backpack = game:GetService("Players").LocalPlayer:WaitForChild("Backpack")
-                    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
-
-                    if not backpack:FindFirstChild("SoccerBall") and not char:FindFirstChild("SoccerBall") then
-                        pcall(function()
-                            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
-                        end)
-                    end
-                    
-                    local ferramenta = backpack:FindFirstChild("SoccerBall") or char:FindFirstChild("SoccerBall")
-                    if ferramenta and ferramenta.Parent == backpack then
-                        ferramenta.Parent = char
-                    end
-                    
-                    local Ball = ServerBalls:WaitForChild("Soccer" .. game:GetService("Players").LocalPlayer.Name, 5)
-
-                    if Ball and Ball:IsA("BasePart") then
-                        Ball.CanCollide = true 
-                        Ball.Massless = false   
-                        
-                        for _, child in pairs(Ball:GetChildren()) do
-                            if child:IsA("BodyVelocity") or child:IsA("BodyAngularVelocity") or child:IsA("ForceField") then
-                                child:Destroy()
-                            end
-                        end
-
-                        if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character:FindFirstChildOfClass("Humanoid") then
-                            local tchar = target.Character
-                            local thum = tchar:FindFirstChildOfClass("Humanoid")
-                            local tRoot = tchar.HumanoidRootPart
-
-                            workspace.CurrentCamera.CameraSubject = thum
-                            
-                            local FORCA_LINEAR = Vector3.new(28000, 28000, 28000)
-                            local FORCA_ANGULAR = Vector3.new(28000, 28000, 28000)
-                            local ultimoCharacterAlvo = tchar
-
-                            while _G.FlingAtivo and tchar:IsDescendantOf(workspace) and target.Parent == game:GetService("Players") and tchar == ultimoCharacterAlvo do
-                                if not tRoot then break end
-                                
-                                Ball.CFrame = tRoot.CFrame * CFrame.Angles(
-                                    math.rad(math.random(-180, 180)), 
-                                    math.rad(math.random(-180, 180)), 
-                                    math.rad(math.random(-180, 180))
-                                )
-                                
-                                Ball.AssemblyLinearVelocity = FORCA_LINEAR
-                                Ball.AssemblyAngularVelocity = FORCA_ANGULAR
-                                
-                                task.wait(0.02) 
-                            end
-                            
-                            pcall(function()
-                                Ball.AssemblyLinearVelocity = Vector3.zero
-                                Ball.AssemblyAngularVelocity = Vector3.zero
-                            end)
-                            
-                            workspace.CurrentCamera.CameraSubject = hum
-                        end
-                    end
-                    _G.FlingAtivo = false
-                end)
-            end
-        else
-            -- Notificação visual nativa da WindUI para quando o botão for clicado sem um alvo ativo
-            WindUI:Notify({
-                Title = "Aviso do Sistema",
-                Content = "Por favor, selecione um alvo primeiro no Dropdown!",
-                Duration = 4
-            })
-        end
-    end
+       local Players = game:GetService("Players")
+       local alvo = Players:FindFirstChild(AlvoSelecionado)
+       
+       if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then
+           return
+       end
+       
+       local characterAlvo = alvo.Character
+       local rootAlvo = characterAlvo.HumanoidRootPart
+       local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
+       
+       -- 2. Acessa a pasta de instâncias do Brookhaven
+       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+       if not pastaProps then return end
+       
+       -- Pega os objetos disponíveis na pasta para fazer a perseguição
+       local propsDisponiveis = pastaProps:GetChildren()
+       if #propsDisponiveis == 0 then return end
+       local prop = propsDisponiveis[1] -- Usa o primeiro prop disponível
+       
+       local remoto = prop:FindFirstChild("SetCurrentCFrame")
+       -- Encontra o assento dentro do Prop para checar se o alvo sentou
+       local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat") or prop:FindFirstChild("Seat")
+       
+       if remoto and assento then
+           -- Cria uma thread paralela para rodar a perseguição sem travar o seu menu
+           task.spawn(function()
+               local timeout = 0
+               local sentou = false
+               
+               -- 3. Loop de Perseguição: Fica teleportando o Prop até o alvo sentar
+               while not sentou and timeout < 300 do
+                   -- Verifica constantemente se o jogador ainda está no servidor e vivo
+                   if not alvo or not alvo.Parent or not rootAlvo or not rootAlvo.Parent then break end
+                   
+                   -- Checa se o Occupant (quem está sentado) é o nosso alvo
+                   if assento.Occupant == humanoidAlvo then
+                       sentou = true
+                       break
+                   end
+                   
+                   -- Teleporta o Prop exatamente para a posição atual do alvo
+                   local posicaoAtualAlvo = rootAlvo.CFrame
+                   if remoto:IsA("RemoteFunction") then
+                       remoto:InvokeServer(posicaoAtualAlvo)
+                   else
+                       remoto:FireServer(posicaoAtualAlvo)
+                   end
+                   
+                   -- Micro-pausa estável para manter o seu client sem congelamentos
+                   task.wait(0.05)
+                   timeout = timeout + 1
+               end
+               
+               -- 4. Se ele sentou, arremessa 200 studs para cima e finaliza o loop para gerar o Fling
+               if sentou and rootAlvo and rootAlvo.Parent then
+                   task.wait(0.1) -- Delay milimétrico para o avatar encaixar no assento
+                   
+                   -- Mantém os eixos X e Z e joga o CFrame 200 studs para cima no eixo Y
+                   local posicaoFlingCeu = rootAlvo.CFrame + Vector3.new(0, 200, 0)
+                   
+                   if remoto:IsA("RemoteFunction") then
+                       remoto:InvokeServer(posicaoFlingCeu)
+                   else
+                       remoto:FireServer(posicaoFlingCeu)
+                   end
+                   
+                   -- O loop de perseguição é encerrado de forma limpa aqui
+               end
+           end)
+       end
+   end
 })
 
 MainTab:Button({
