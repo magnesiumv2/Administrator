@@ -686,3 +686,44 @@ MainTab:Button({
         end
     end
 })
+
+_G.LagFixoAtivo = false
+_G.IntensidadeLag = 0.04 -- Tempo em segundos que ele passa metralhando o Remote
+_G.IntervaloRespiro = 0.08 -- Tempo em segundos que ele para para o servidor respirar
+
+MainTab:Button({
+    Title = ";lag",
+    Callback = function()
+        if _G.LagFixoAtivo then
+            _G.LagFixoAtivo = false
+            WindUI:Notify({ Title = "Painel Admin", Content = "Lag fixo desativado.", Duration = 3 })
+        else
+            _G.LagFixoAtivo = true
+            WindUI:Notify({ Title = "Painel Admin", Content = "Mantendo lag fixo e controlado...", Duration = 3 })
+            
+            task.spawn(function()
+                local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+                local toolRemote = re and re:FindFirstChild("1Too1l")
+                
+                if toolRemote then
+                    while _G.LagFixoAtivo do
+                        local tempoInicial = os.clock()
+                        
+                        -- Janela de Ataque: Envia o máximo possível dentro do tempo estipulado
+                        while (os.clock() - tempoInicial) < _G.IntensidadeLag do
+                            if not _G.LagFixoAtivo then break end
+                            task.spawn(function()
+                                pcall(function()
+                                    toolRemote:InvokeServer("PickingTools", "FireHose")
+                                end)
+                            end)
+                        end
+                        
+                        -- Janela de Respiro: Pausa obrigatória para validação do Heartbeat do Roblox
+                        task.wait(_G.IntervaloRespiro)
+                    end
+                end
+            end)
+        end
+    end
+})
