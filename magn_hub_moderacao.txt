@@ -687,40 +687,81 @@ MainTab:Button({
     end
 })
 
-_G.LagFixoAtivo = false
-_G.IntensidadeLag = 0.03 -- Janela de metralhadora (leve para o client)
-_G.IntervaloRespiro = 0.09 -- Janela de respiro do servidor
+local LoopLagAtivo = false
 
 MainTab:Button({
-    Title = ";lagserver (Otimizado)",
-    Callback = function()
-        if _G.LagFixoAtivo then
-            _G.LagFixoAtivo = false
-            WindUI:Notify({ Title = "Painel Admin", Content = "Lag desativado. Seu FPS vai normalizar.", Duration = 3 })
-        else
-            _G.LagFixoAtivo = true
-            WindUI:Notify({ Title = "Painel Admin", Content = "Lag ativado. Servidor travando, seu Client liso.", Duration = 3 })
-            
-            task.spawn(function()
-                local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
-                local toolRemote = re and re:FindFirstChild("1Too1l")
-                
-                if toolRemote then
-                    while _G.LagFixoAtivo do
-                        local tempoInicial = os.clock()
-                        
-                        -- Envia pacotes em sequência direta sem estourar a memória da sua CPU
-                        while (os.clock() - tempoInicial) < _G.IntensidadeLag do
-                            if not _G.LagFixoAtivo then break end
-                            -- pcall direto sem task.spawn impede o acúmulo de threads no seu client
-                            pcall(toolRemote.InvokeServer, toolRemote, "PickingTools", "FireHose")
-                        end
-                        
-                        -- Limpa a fila do seu processador e faz o servidor respirar o mínimo
-                        task.wait(_G.IntervaloRespiro)
-                    end
-                end
-            end)
-        end
-    end
+   Name = ";lag",
+   Callback = function()
+       -- Se o loop já estiver rodando, evita criar outro por cima
+       if LoopLagAtivo then return end
+       
+       -- Verifica se existe um alvo selecionado na sua variável global
+       if not AlvoSelecionado or AlvoSelecionado == "" then
+           return
+       end
+       
+       local Players = game:GetService("Players")
+       local alvo = Players:FindFirstChild(AlvoSelecionado)
+       if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then
+           return
+       end
+       
+       -- Ativa a variável de controle do loop
+       LoopLagAtivo = true
+       
+       -- Cria uma thread isolada de fundo para o loop rodar sem travar o seu menu
+       task.spawn(function()
+           while LoopLagAtivo do
+               -- Verifica constantemente se o alvo ainda está no servidor e com corpo vivo
+               if not alvo or not alvo.Parent or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then
+                   LoopLagAtivo = false
+                   break
+               end
+               
+               local posicaoAlvo = alvo.Character.HumanoidRootPart.CFrame
+               local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+               
+               if pastaProps then
+                   -- Varre os props e atualiza a posição deles na cabeça/corpo do alvo
+                   for _, prop in ipairs(pastaProps:GetChildren()) do
+                       local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                       if remoto then
+                           if remoto:IsA("RemoteFunction") then
+                               remoto:InvokeServer(posicaoAlvo)
+                           else
+                               remoto:FireServer(posicaoAlvo)
+                           end
+                       end
+                   end
+               end
+               
+               -- Pausa milimétrica de segurança para manter o seu FPS estável e não dar kick por spam
+               task.wait(0.1)
+           end
+       end)
+   end
+})
+
+MainTab:Button({
+   Name = ";unlag",
+   Callback = function()
+       -- Desativa a variável, o que força o loop do botão acima a quebrar (break)
+       LoopLagAtivo = false
+       
+       -- Opcional: Afasta os props do alvo para limpar o visual imediatamente
+       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+       if pastaProps then
+           local coordenadaLimbo = CFrame.new(9999, -475, 9999) -- Envia para longe
+           for _, prop in ipairs(pastaProps:GetChildren()) do
+               local remoto = prop:FindFirstChild("SetCurrentCFrame")
+               if remoto then
+                   if remoto:IsA("RemoteFunction") then
+                       remoto:InvokeServer(coordenadaLimbo)
+                   else
+                       remoto:FireServer(coordenadaLimbo)
+                   end
+               end
+           end
+       end
+   end
 })
