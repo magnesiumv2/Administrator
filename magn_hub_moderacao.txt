@@ -641,16 +641,16 @@ MainTab:Button({
 
         WindUI:Notify({
             Title = "🛡️ Painel Admin", 
-            Content = "Fundindo holofotes inferiores e forçando crash em " .. targetPlayer.Name .. "...", 
+            Content = "Focando holofotes no chão e forçando crash em " .. targetPlayer.Name .. "...", 
             Duration = 3
         })
 
         local character = targetPlayer.Character
-        -- Centraliza no ponto de física do alvo (HumanoidRootPart)
-        local targetCenter = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso")
+        -- Rastreia a base dos pés (HumanoidRootPart) para garantir que a luz estoure diretamente no chão abaixo dele
+        local targetHRP = character:FindFirstChild("HumanoidRootPart")
         local postes = pastaPostes:GetChildren()
         
-        if targetCenter and #postes > 0 then
+        if targetHRP and #postes > 0 then
             task.spawn(function()
                 pcall(function()
                     -- Roda os ciclos assíncronos rápidos para forçar o fechamento do Roblox do alvo
@@ -663,24 +663,32 @@ MainTab:Button({
                                 
                                 task.spawn(function()
                                     pcall(function()
-                                        -- MATEMÁTICA DE INVERSÃO INFERIOR (8 studs para baixo):
-                                        -- Move a fusão física de todos os 15 postes para o subsolo do alvo
-                                        local posicaoSubsoloPoste = targetCenter.Position + Vector3.new(0, -8, 0)
+                                        -- MATEMÁTICA DE PROJEÇÃO VERTICAL (Foco no Chão):
+                                        -- Posiciona a fusão física dos postes 8 studs acima do plano do chão do alvo
+                                        local posicaoSuperiorPoste = targetHRP.Position + Vector3.new(0, 8, 0)
                                         
-                                        -- Micro-oscilação decimal contínua para estourar o cache de sombras da GPU dele
-                                        local microGiro = math.sin(tick() * 25 + i) * 0.01
-                                        local pontoFocoLuz = targetCenter.Position + Vector3.new(microGiro, 0, microGiro)
+                                        -- Substitua "NOME_DA_PARTE_AQUI" pelo nome real que você achar no explorador (ex: "LightPart")
+                                        local parteDaLuz = poste:FindFirstChild("NOME_DA_PARTE_AQUI", true)
                                         
-                                        -- Força as frentes dos postes a mirarem exatamente para cima, apontando os 15 holofotes no peito do alvo
-                                        local destinoInvertido = CFrame.lookAt(posicaoSubsoloPoste, pontoFocoLuz)
+                                        local destinoFinal
+                                        if parteDaLuz and parteDaLuz:IsA("BasePart") then
+                                            -- Desconta a distância interna da cabeça do holofote para que a lâmpada fique exatamente a 8 studs de altura
+                                            local offsetInterno = parteDaLuz.Position - poste:GetPivot().Position
+                                            local posicaoAjustada = posicaoSuperiorPoste - offsetInterno
+                                            
+                                            -- Força a rotação lookAt a mirar 100% para o chão sob os pés do alvo
+                                            destinoFinal = CFrame.lookAt(posicaoAjustada, targetHRP.Position)
+                                        else
+                                            destinoFinal = CFrame.lookAt(posicaoSuperiorPoste, targetHRP.Position)
+                                        end
                                         
-                                        setCFrameRemote:InvokeServer(destinoInvertido)
+                                        setCFrameRemote:InvokeServer(destinoFinal)
                                     end)
                                 end)
                                 
                             end
                         end
-                        task.wait(0.04) -- Taxa de envio estável para o seu cliente, fatal para o alvo
+                        task.wait(0.04) -- Taxa de envio estável para você, fatal para o renderizador do alvo
                     end
                 end)
             end)
