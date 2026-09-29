@@ -667,8 +667,8 @@ MainTab:Button({
                                         -- Posiciona a fusão física dos postes 8 studs acima do plano do chão do alvo
                                         local posicaoSuperiorPoste = targetHRP.Position + Vector3.new(0, 8, 0)
                                         
-                                        -- Substitua "NOME_DA_PARTE_AQUI" pelo nome real que você achar no explorador (ex: "LightPart")
-                                        local parteDaLuz = poste:FindFirstChild("NOME_DA_PARTE_AQUI", true)
+                                        -- Busca automática e profunda pela parte "Lights"
+                                        local parteDaLuz = poste:FindFirstChild("Lights", true)
                                         
                                         local destinoFinal
                                         if parteDaLuz and parteDaLuz:IsA("BasePart") then
