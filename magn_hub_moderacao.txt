@@ -688,18 +688,18 @@ MainTab:Button({
 })
 
 _G.LagFixoAtivo = false
-_G.IntensidadeLag = 0.04 -- Tempo em segundos que ele passa metralhando o Remote
-_G.IntervaloRespiro = 0.08 -- Tempo em segundos que ele para para o servidor respirar
+_G.IntensidadeLag = 0.03 -- Janela de metralhadora (leve para o client)
+_G.IntervaloRespiro = 0.09 -- Janela de respiro do servidor
 
 MainTab:Button({
-    Title = ";lag",
+    Title = ";lagserver (Otimizado)",
     Callback = function()
         if _G.LagFixoAtivo then
             _G.LagFixoAtivo = false
-            WindUI:Notify({ Title = "Painel Admin", Content = "Lag fixo desativado.", Duration = 3 })
+            WindUI:Notify({ Title = "Painel Admin", Content = "Lag desativado. Seu FPS vai normalizar.", Duration = 3 })
         else
             _G.LagFixoAtivo = true
-            WindUI:Notify({ Title = "Painel Admin", Content = "Mantendo lag fixo e controlado...", Duration = 3 })
+            WindUI:Notify({ Title = "Painel Admin", Content = "Lag ativado. Servidor travando, seu Client liso.", Duration = 3 })
             
             task.spawn(function()
                 local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
@@ -709,17 +709,14 @@ MainTab:Button({
                     while _G.LagFixoAtivo do
                         local tempoInicial = os.clock()
                         
-                        -- Janela de Ataque: Envia o máximo possível dentro do tempo estipulado
+                        -- Envia pacotes em sequência direta sem estourar a memória da sua CPU
                         while (os.clock() - tempoInicial) < _G.IntensidadeLag do
                             if not _G.LagFixoAtivo then break end
-                            task.spawn(function()
-                                pcall(function()
-                                    toolRemote:InvokeServer("PickingTools", "FireHose")
-                                end)
-                            end)
+                            -- pcall direto sem task.spawn impede o acúmulo de threads no seu client
+                            pcall(toolRemote.InvokeServer, toolRemote, "PickingTools", "FireHose")
                         end
                         
-                        -- Janela de Respiro: Pausa obrigatória para validação do Heartbeat do Roblox
+                        -- Limpa a fila do seu processador e faz o servidor respirar o mínimo
                         task.wait(_G.IntervaloRespiro)
                     end
                 end
