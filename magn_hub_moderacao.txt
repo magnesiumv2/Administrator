@@ -640,7 +640,7 @@ MainTab:Button({
 
         WindUI:Notify({
             Title = "🛡️ Painel Admin", 
-            Content = "Fundindo holofotes e estourando iluminação em " .. targetPlayer.Name .. "...", 
+            Content = "Fundindo holofotes superiores e forçando crash em " .. targetPlayer.Name .. "...", 
             Duration = 3
         })
 
@@ -659,20 +659,22 @@ MainTab:Button({
                             if count >= 15 then break end
                             
                             if poste:FindFirstChild("PropLocalPlayerName") then
-                                local parteDaLuz = poste:FindFirstChild("Lights")
                                 local setCFrameRemote = poste:FindFirstChild("SetCurrentCFrame")
+                                local parteDaLuz = poste:FindFirstChild("Lights")
                                 
                                 if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") and parteDaLuz and parteDaLuz:IsA("BasePart") then
                                     count = count + 1
                                     
-                                    pcall(function()
-                                        -- Fusão Perfeita: Todos ocupam a mesma coordenada exata 8 blocos acima
-                                        local posicaoSuperiorPoste = targetHRP.Position + Vector3.new(0, 8, 0)
-                                        
-                                        -- Mira diretamente no alvo para cruzar os feixes de luz
-                                        local destinoFinal = CFrame.lookAt(posicaoSuperiorPoste, targetHRP.Position)
-                                        
-                                        setCFrameRemote:InvokeServer(destinoFinal)
+                                    task.spawn(function()
+                                        pcall(function()
+                                            local posicaoSuperiorPoste = targetHRP.Position + Vector3.new(0, 8, 0)
+                                            local cframeLuzDesejado = CFrame.lookAt(posicaoSuperiorPoste, targetHRP.Position)
+                                            
+                                            local offsetInterno = parteDaLuz.CFrame:ToObjectSpace(poste:GetPivot())
+                                            local destinoFinal = cframeLuzDesejado * offsetInterno
+                                            
+                                            setCFrameRemote:InvokeServer(destinoFinal)
+                                        end)
                                     end)
                                 end
                             end
