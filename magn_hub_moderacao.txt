@@ -609,121 +609,102 @@ MainTab:Button({
 })
 
 MainTab:Button({
-    Title = ";crash",
-    Callback = function()
-        if AlvoSelecionado == "" then
-            WindUI:Notify({Title = "⚠️ Requisito", Content = "Defina um alvo primeiro na fila administrativa.", Duration = 4})
-            return
-        end
+   Title = ";crash",
+   Callback = function()
+       -- 1. Verifica se existe um alvo selecionado na sua variável global
+       if not AlvoSelecionado or AlvoSelecionado == "" then
+           return
+       end
 
-        local Players = game:GetService("Players")
-        local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-        
-        local targetPlayer = nil
-        for _, player in pairs(Players:GetPlayers()) do
-            if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-                targetPlayer = player
-                break
-            end
-        end
-        
-        if not targetPlayer or not targetPlayer.Character then
-            WindUI:Notify({Title = "❌ Erro Admin", Content = "Alvo inválido ou não carregado.", Duration = 3})
-            return
-        end
-
-        local pastaPostes = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones") 
-        if not pastaPostes then
-            WindUI:Notify({Title = "❌ Erro Admin", Content = "Pasta de Holofotes não mapeada.", Duration = 3})
-            return
-        end
-
-        WindUI:Notify({
-            Title = "🛡️ Painel Admin", 
-            Content = "Fundindo holofotes superiores e forçando crash em " .. targetPlayer.Name .. "...", 
-            Duration = 3
-        })
-
-        local character = targetPlayer.Character
-        local targetHRP = character:FindFirstChild("HumanoidRootPart")
-        local postes = pastaPostes:GetChildren()
-        
-        if targetHRP and #postes > 0 then
-            task.spawn(function()
-                pcall(function()
-                    for loop = 1, 12 do
-                        if not targetPlayer or not targetPlayer.Parent then break end
-                        
-                        local count = 0
-                        for _, poste in pairs(postes) do
-                            if count >= 15 then break end
-                            
-                            if poste:FindFirstChild("PropLocalPlayerName") then
-                                local setCFrameRemote = poste:FindFirstChild("SetCurrentCFrame")
-                                local parteDaLuz = poste:FindFirstChild("Lights")
-                                
-                                if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") and parteDaLuz and parteDaLuz:IsA("BasePart") then
-                                    count = count + 1
-                                    
-                                    task.spawn(function()
-                                        pcall(function()
-                                            local posicaoSuperiorPoste = targetHRP.Position + Vector3.new(0, 8, 0)
-                                            local cframeLuzDesejado = CFrame.lookAt(posicaoSuperiorPoste, targetHRP.Position)
-                                            
-                                            local offsetInterno = parteDaLuz.CFrame:ToObjectSpace(poste:GetPivot())
-                                            local destinoFinal = cframeLuzDesejado * offsetInterno
-                                            
-                                            setCFrameRemote:InvokeServer(destinoFinal)
-                                        end)
-                                    end)
-                                end
-                            end
-                        end
-                        task.wait(0.04)
-                    end
-                end)
-            end)
-        end
-    end
+       local Players = game:GetService("Players")
+       local alvo = Players:FindFirstChild(AlvoSelecionado)
+       
+       -- Garante que o jogador alvo e a cabeça/corpo dele existem no servidor
+       if alvo and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
+           local characterAlvo = alvo.Character
+           local rootAlvo = characterAlvo.HumanoidRootPart
+           
+           -- CONCENTRAÇÃO CIRÚRGICA: Define um ponto fixo e exato 3 studs acima do alvo
+           -- CFrame.Angles força todos os postes a ficarem na mesma rotação vertical (90 graus)
+           local posicaoExataAlinhada = rootAlvo.CFrame * CFrame.new(0, 3, 0) * CFrame.Angles(math.rad(90), 0, 0)
+           
+           -- Acessa a pasta de instâncias configurada no Brookhaven
+           local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+           
+           if pastaProps then
+               local propsDisponiveis = pastaProps:GetChildren()
+               
+               -- Limita a execução a no máximo 15 postes esportivos
+               local limitePostes = math.min(#propsDisponiveis, 15)
+               
+               -- Envia cada um dos 15 postes exatamente para a MESMA coordenada
+               for i = 1, limitePostes do
+                   local prop = propsDisponiveis[i]
+                   local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                   
+                   if remoto then
+                       -- Sem criar órbitas ou esferas, todos se fundem no mesmo ponto
+                       if remoto:IsA("RemoteFunction") then
+                           remoto:InvokeServer(posicaoExataAlinhada)
+                       else
+                           remoto:FireServer(posicaoExataAlinhada)
+                       end
+                   end
+               end
+           end
+       end
+   end
 })
 
 local LoopLagAtivo = false
 
+-- 1. BOTÃO DE INICIAR O LOOP (;lag)
 MainTab:Button({
    Title = ";lag",
    Callback = function()
-       -- Se o loop já estiver rodando, evita criar outro por cima
        if LoopLagAtivo then return end
        
        -- Verifica se existe um alvo selecionado na sua variável global
-       if not AlvoSelecionado or AlvoSelecionado == "" then
-           return
-       end
+       if not AlvoSelecionado or AlvoSelecionado == "" then return end
        
        local Players = game:GetService("Players")
        local alvo = Players:FindFirstChild(AlvoSelecionado)
-       if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then
-           return
-       end
+       if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then return end
        
-       -- Ativa a variável de controle do loop
        LoopLagAtivo = true
        
-       -- Cria uma thread isolada de fundo para o loop rodar sem travar o seu menu
+       -- [ANTI-LAG LOCAL] Protege a sua GPU de renderizar as partículas na sua tela
+       local conexaoAntiLag
+       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+       
+       if pastaProps then
+           conexaoAntiLag = pastaProps.DescendantAdded:Connect(function(descendant)
+               if descendant:IsA("ParticleEmitter") or descendant:IsA("Smoke") or descendant:IsA("Fire") or descendant:IsA("Light") then
+                   task.defer(function()
+                       if descendant and descendant.Parent then
+                           descendant:Destroy()
+                       end
+                   end)
+               end
+           end)
+       end
+       
+       -- Loop de movimentação balanceado de 0.3 segundos para impedir congelamento de rede
        task.spawn(function()
            while LoopLagAtivo do
-               -- Verifica constantemente se o alvo ainda está no servidor e com corpo vivo
                if not alvo or not alvo.Parent or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then
                    LoopLagAtivo = false
                    break
                end
                
                local posicaoAlvo = alvo.Character.HumanoidRootPart.CFrame
-               local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
                
                if pastaProps then
-                   -- Varre os props e atualiza a posição deles na cabeça/corpo do alvo
-                   for _, prop in ipairs(pastaProps:GetChildren()) do
+                   local children = pastaProps:GetChildren()
+                   for i = 1, #children do
+                       if not LoopLagAtivo then break end
+                       
+                       local prop = children[i]
                        local remoto = prop:FindFirstChild("SetCurrentCFrame")
                        if remoto then
                            if remoto:IsA("RemoteFunction") then
@@ -735,24 +716,30 @@ MainTab:Button({
                    end
                end
                
-               -- Pausa milimétrica de segurança para manter o seu FPS estável e não dar kick por spam
-               task.wait(0.1)
+               -- Pausa para o buffer de rede respirar
+               task.wait(0.3)
+           end
+           
+           if conexaoAntiLag then
+               conexaoAntiLag:Disconnect()
+               conexaoAntiLag = nil
            end
        end)
    end
 })
 
+-- 2. BOTÃO DE PARAR O LOOP (;unlag)
 MainTab:Button({
    Title = ";unlag",
    Callback = function()
-       -- Desativa a variável, o que força o loop do botão acima a quebrar (break)
        LoopLagAtivo = false
        
-       -- Opcional: Afasta os props do alvo para limpar o visual imediatamente
        local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
        if pastaProps then
-           local coordenadaLimbo = CFrame.new(9999, -475, 9999) -- Envia para longe
-           for _, prop in ipairs(pastaProps:GetChildren()) do
+           local coordenadaLimbo = CFrame.new(9999, -475, 9999)
+           local children = pastaProps:GetChildren()
+           for i = 1, #children do
+               local prop = children[i]
                local remoto = prop:FindFirstChild("SetCurrentCFrame")
                if remoto then
                    if remoto:IsA("RemoteFunction") then
