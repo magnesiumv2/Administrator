@@ -617,7 +617,6 @@ MainTab:Button({
         end
 
         local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
         local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
         
         local targetPlayer = nil
@@ -641,7 +640,7 @@ MainTab:Button({
 
         WindUI:Notify({
             Title = "🛡️ Painel Admin", 
-            Content = "Alinhando holofotes superiores e forçando crash em " .. targetPlayer.Name .. "...", 
+            Content = "Fundindo holofotes e estourando iluminação em " .. targetPlayer.Name .. "...", 
             Duration = 3
         })
 
@@ -652,37 +651,30 @@ MainTab:Button({
         if targetHRP and #postes > 0 then
             task.spawn(function()
                 pcall(function()
-                    -- Roda os ciclos rápidos para forçar o fechamento do aplicativo do alvo
                     for loop = 1, 12 do
                         if not targetPlayer or not targetPlayer.Parent then break end
                         
+                        local count = 0
                         for _, poste in pairs(postes) do
-                            local setCFrameRemote = poste:FindFirstChild("SetCurrentCFrame")
-                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                            if count >= 15 then break end
+                            
+                            if poste:FindFirstChild("PropLocalPlayerName") then
+                                local parteDaLuz = poste:FindFirstChild("Lights")
+                                local setCFrameRemote = poste:FindFirstChild("SetCurrentCFrame")
                                 
-                                task.spawn(function()
+                                if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") and parteDaLuz and parteDaLuz:IsA("BasePart") then
+                                    count = count + 1
+                                    
                                     pcall(function()
-                                        -- Posiciona a fusão física 8 studs acima do chão do alvo
+                                        -- Fusão Perfeita: Todos ocupam a mesma coordenada exata 8 blocos acima
                                         local posicaoSuperiorPoste = targetHRP.Position + Vector3.new(0, 8, 0)
                                         
-                                        -- Acessa diretamente a parte "Lights" com base no Path exato fornecido
-                                        local parteDaLuz = poste:FindFirstChild("Lights")
-                                        
-                                        local destinoFinal
-                                        if parteDaLuz and parteDaLuz:IsA("BasePart") then
-                                            -- Desconta a distância interna da lâmpada para que o canhão fique exatamente a 8 studs de altura
-                                            local offsetInterno = parteDaLuz.Position - poste:GetPivot().Position
-                                            local posicaoAjustada = posicaoSuperiorPoste - offsetInterno
-                                            
-                                            destinoFinal = CFrame.lookAt(posicaoAjustada, targetHRP.Position)
-                                        else
-                                            destinoFinal = CFrame.lookAt(posicaoSuperiorPoste, targetHRP.Position)
-                                        end
+                                        -- Mira diretamente no alvo para cruzar os feixes de luz
+                                        local destinoFinal = CFrame.lookAt(posicaoSuperiorPoste, targetHRP.Position)
                                         
                                         setCFrameRemote:InvokeServer(destinoFinal)
                                     end)
-                                end)
-                                
+                                end
                             end
                         end
                         task.wait(0.04)
