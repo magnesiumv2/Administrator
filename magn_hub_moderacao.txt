@@ -78,62 +78,67 @@ MainTab:Button({
        if not AlvoSelecionado or AlvoSelecionado == "" then return end
        
        local Players = game:GetService("Players")
-       local alvo = Players:FindFirstChild(AlvoSelecionado)
-       if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then return end
+       local targetPlayer = nil
        
-       local characterAlvo = alvo.Character
-       local rootAlvo = characterAlvo.HumanoidRootPart
-       local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
-       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
-       
-       if pastaProps then
-           local propsDisponiveis = pastaProps:GetChildren()
-           if #propsDisponiveis == 0 then return end
-           
-           -- Puxa o objeto fixo usando o índice direto do ;punish
-           local prop = propsDisponiveis[1]
-           local remoto = prop:FindFirstChild("SetCurrentCFrame")
-           local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
-           
-           if remoto and assento then
-               LoopFlingPersistente = true
-               
-               task.spawn(function()
-                   -- Fica perseguindo o alvo até ele sentar
-                   while LoopFlingPersistente do
-                       if not alvo or not alvo.Parent or not rootAlvo or not rootAlvo.Parent or not humanoidAlvo then 
-                           break 
-                       end
-                       
-                       -- Se o alvo sentou no assento do Prop
-                       if assento.Occupant == humanoidAlvo then
-                           task.wait(0.08) -- Delay exato de sincronia do ;punish
-                           
-                           -- Teleporta 200 studs para cima APENAS UMA VEZ
-                           local posicaoFlingCeu = rootAlvo.CFrame + Vector3.new(0, 200, 0)
-                           if remoto:IsA("RemoteFunction") then
-                               remoto:InvokeServer(posicaoFlingCeu)
-                           else
-                               remoto:FireServer(posicaoFlingCeu)
-                           end
-                           
-                           -- Quebra o loop imediatamente após o disparo único
-                           break
-                       else
-                           -- Se não sentou, continua a perseguição rápida colado nele
-                           local posicaoAtualAlvo = rootAlvo.CFrame
-                           if remoto:IsA("RemoteFunction") then
-                               remoto:InvokeServer(posicaoAtualAlvo)
-                           else
-                               remoto:FireServer(posicaoAtualAlvo)
-                           end
-                       end
-                       task.wait(0.05)
-                   end
-                   LoopFlingPersistente = false -- Garante o encerramento do estado
-               end)
+       for _, player in pairs(Players:GetPlayers()) do
+           if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+               targetPlayer = player
+               break
            end
        end
+       
+       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then 
+           return 
+       end
+       
+       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+       if not pastaProps then return end
+       
+       LoopFlingPersistente = true
+       
+       task.spawn(function()
+           while LoopFlingPersistente and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+               local characterAlvo = targetPlayer.Character
+               local rootAlvo = characterAlvo.HumanoidRootPart
+               local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
+               
+               if humanoidAlvo and humanoidAlvo.Health <= 0 then break end
+               
+               local props = pastaProps:GetChildren()
+               if #props == 0 then break end
+               
+               local alvoSentou = false
+               for _, prop in pairs(props) do
+                   local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
+                   if assento and assento.Occupant == humanoidAlvo then
+                       alvoSentou = true
+                       break
+                   end
+               end
+               
+               if alvoSentou then
+                   local posicaoFlingCeu = rootAlvo.CFrame * CFrame.new(0, 200, 0)
+                   for _, prop in pairs(props) do
+                       local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                       if remoto and remoto:IsA("RemoteFunction") then
+                           task.spawn(function() pcall(function() remoto:InvokeServer(posicaoFlingCeu) end) end)
+                       end
+                   end
+                   task.wait(0.08)
+                   break
+               else
+                   local destinoCFrame = rootAlvo.CFrame
+                   for _, prop in pairs(props) do
+                       local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                       if remoto and remoto:IsA("RemoteFunction") then
+                           task.spawn(function() pcall(function() remoto:InvokeServer(destinoCFrame) end) end)
+                       end
+                   end
+               end
+               task.wait(0.05)
+           end
+           LoopFlingPersistente = false
+       end)
    end
 })
 
