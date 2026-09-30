@@ -770,7 +770,7 @@ MainTab:Button({
 })
 
 -- ==========================================
--- COMANDO: ;ban (VELOCIDADE ULTRA RÁPIDA - IGUAL ;PUNISH)
+-- COMANDO: ;ban (ULTRA RÁPIDO
 -- ==========================================
 MainTab:Button({
     Title = ";ban",
@@ -782,7 +782,7 @@ MainTab:Button({
             local Players = game:GetService("Players")
             local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
             
-            -- Busca inteligente por aproximação de texto (Igual ao seu ;punish)
+            -- Busca por aproximação idêntica ao do seu ;punish
             local targetPlayer = nil
             for _, player in pairs(Players:GetPlayers()) do
                 if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
@@ -796,9 +796,8 @@ MainTab:Button({
                 
                 if trafficCones then
                     _G.PainelAdmin_BanPersistente = true
-                    _G.NomeDoBanido = targetPlayer.Name -- Registra o nome para persistência caso ele saia e reentre
+                    _G.NomeDoBanido = targetPlayer.Name 
 
-                    -- Notificação visual padrão VoidWare solicitada
                     pcall(function()
                         WindUI:Notify({
                             Title = "Jogador Banido:", 
@@ -808,21 +807,21 @@ MainTab:Button({
                     end)
 
                     task.spawn(function()
-                        -- Loop contínuo persistente (Ativo mesmo se o alvo resetar ou reentrar)
+                        -- Roda de forma contínua para capturar o jogador mesmo em mortes ou reentradas
                         while _G.PainelAdmin_BanPersistente do
-                            -- Busca contínua do jogador pelo nome salvo para garantir o rastreio pós-rejoin
-                            localcurrentPlayer = Players:FindFirstChild(_G.NomeDoBanido)
+                            -- Re-sincroniza a instância do jogador vivo na lista a cada iteração do loop
+                            local playerAtual = Players:FindFirstChild(_G.NomeDoBanido)
                             
-                            if localPlayer and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                local character = localPlayer.Character
+                            if playerAtual and playerAtual.Character and playerAtual.Character:FindFirstChild("HumanoidRootPart") then
+                                local character = playerAtual.Character
                                 local targetHRP = character.HumanoidRootPart
                                 local humanoid = character:FindFirstChildOfClass("Humanoid")
                                 
                                 if humanoid and humanoid.Health > 0 then
-                                    -- Define a posição de perseguição colada no corpo do alvo
+                                    -- Trajeta a perseguição padrão na coordenada do personagem
                                     local destinoBanCFrame = targetHRP.CFrame
                                     
-                                    -- SE O ALVO SENTAR: Muda instantaneamente para a coordenada limbo do ;punish
+                                    -- Identificação instantânea de assento (Muda a rota de envio para as coordenadas limbo)
                                     if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
                                         destinoBanCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
                                         
@@ -839,9 +838,9 @@ MainTab:Button({
                                     local props = trafficCones:GetChildren()
                                     
                                     if #props > 0 then
-                                        -- Disparo assíncrono em paralelo de altíssima velocidade (Sem travas de micro-pausa)
+                                        -- Bombardeio síncrono/assíncrono em paralelo idêntico ao seu ;punish
                                         for _, prop in pairs(props) do
-                                            if not _G.PainelAdmin_BanPersistente or not (localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                            if not _G.PainelAdmin_BanPersistente or not (playerAtual.Character and playerAtual.Character:FindFirstChild("HumanoidRootPart")) then break end
                                             
                                             local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                             if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
@@ -855,7 +854,7 @@ MainTab:Button({
                                     end
                                 end
                             end
-                            -- Janela de tempo idêntica à velocidade do seu punish (0.1s)
+                            -- Cadência rápida de 0.1 segundos para manter os objetos colados
                             task.wait(0.1) 
                         end
                     end)
@@ -872,7 +871,7 @@ MainTab:Button({
 })
 
 -- ==========================================
--- COMANDO: ;unban (INTERRUPÇÃO COMPLETA)
+-- COMANDO: ;unban (INTERRUPÇÃO LÓGICA)
 -- ==========================================
 MainTab:Button({
     Title = ";unban",
@@ -880,11 +879,9 @@ MainTab:Button({
     Callback = function()
         local nomeParaAviso = _G.NomeDoBanido or AlvoSelecionado or "Jogador"
         
-        -- Desliga a chave lógica, quebrando o loop em segundo plano imediatamente
         _G.PainelAdmin_BanPersistente = false
         _G.NomeDoBanido = nil
         
-        -- Notificação visual de liberação padrão VoidWare
         pcall(function()
             WindUI:Notify({
                 Title = "Jogador Desbanido:", 
