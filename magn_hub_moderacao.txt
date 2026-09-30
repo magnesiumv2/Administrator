@@ -80,8 +80,12 @@ MainTab:Button({
        if LoopFlingPersistente then return end
        if not AlvoSelecionado or AlvoSelecionado == "" then return end
        
-local targetPlayer = Players:FindFirstChild(AlvoSelecionado)
-       local targetPlayer = nil
+       -- Faça isso:
+local targetPlayer = Players:FindFirstChild(AlvoSelecionado) -- Busca direta e limpa
+
+if not targetPlayer or not targetPlayer.Character then 
+    return -- Para a execução se o jogador não estiver no servidor
+end
        
        for _, player in pairs(Players:GetPlayers()) do
            if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
