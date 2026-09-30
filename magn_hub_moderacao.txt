@@ -407,19 +407,18 @@ MainTab:Button({
    end
 })
 
--- 2. BOTÃO DE PARAR O SPECTATE (;unview)
+-- ============================================================
+-- FIX: CORREÇÃO DO ESCOPO DA CÂMERA NO BOTÃO ";unview"
+-- ============================================================
 MainTab:Button({
-   Title = ";unview",
-   Callback = function()
-       -- Desativa a variável de controle para encerrar o loop de monitoramento
-       EspectandoAlvo = false
-       
-       -- Retorna o foco da câmera de volta para o SEU próprio personagem de forma segura
-       local camera = workspace.CurrentCamera
-       if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-           camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-       end
-   end
+    Title = ";unview",
+    Callback = function()
+        EspectandoAlvo = false
+        local camera = workspace.CurrentCamera
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        end
+    end
 })
 
 MainTab:Button({
