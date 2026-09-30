@@ -770,7 +770,7 @@ MainTab:Button({
 })
 
 -- ==========================================
--- COMANDO: ;ban (SINTAXE 100% REVISADA)
+-- COMANDO: ;ban (VELOCIDADE ULTRA RÁPIDA - IGUAL ;PUNISH)
 -- ==========================================
 MainTab:Button({
     Title = ";ban",
@@ -778,83 +778,101 @@ MainTab:Button({
     Callback = function()
         if _G.PainelAdmin_BanPersistente == true then return end
         
-        -- Checagem gramatical e retorno seguros:
-        if not AlvoSelecionado or AlvoSelecionado == "" then
-            pcall(function() 
-                _G.WindUI:Notify({ Title = "Aviso", Content = "Selecione um alvo!", Duration = 5 }) 
-            end)
-            return
-        end
-        
-        _G.PainelAdmin_BanPersistente = true
-        _G.NomeDoBanido = tostring(AlvoSelecionado)
-        
-        pcall(function() 
-            _G.WindUI:Notify({ Title = "Jogador Banido:", Content = _G.NomeDoBanido .. " foi banido", Duration = 5 }) 
-        end)
-        
-        task.spawn(function()
-            local coordenadaPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
+        if AlvoSelecionado ~= "" then
+            local Players = game:GetService("Players")
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
             
-            while _G.PainelAdmin_BanPersistente do
-                local targetPlayer = game:GetService("Players"):FindFirstChild(_G.NomeDoBanido)
-                local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
-                
-                if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and pastaProps then
-                    local characterAlvo = targetPlayer.Character
-                    local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
-                    
-                    if humanoidAlvo and humanoidAlvo.Health > 0 then
-                        local props = pastaProps:GetChildren()
-                        
-                        if #props > 0 then
-                            local alvoSentou = false
-                            
-                            for _, prop in pairs(props) do
-                                local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
-                                if assento and assento.Occupant == humanoidAlvo then
-                                    alvoSentou = true
-                                    break
-                                end
-                            end
-                            
-                            if alvoSentou then
-                                local contador = 0
-                                for _, prop in pairs(props) do
-                                    if not _G.PainelAdmin_BanPersistente then break end
-                                    local remoto = prop:FindFirstChild("SetCurrentCFrame")
-                                    if remoto and remoto:IsA("RemoteFunction") then
-                                        pcall(function() remoto:InvokeServer(coordenadaPunishCFrame) end)
-                                        
-                                        contador = contador + 1
-                                        if contador % 5 == 0 then task.wait(0.01) end
-                                    end
-                                end
-                            else
-                                local destinoCFrame = characterAlvo.HumanoidRootPart.CFrame
-                                local contador = 0
-                                for _, prop in pairs(props) do
-                                    if not _G.PainelAdmin_BanPersistente then break end
-                                    local remoto = prop:FindFirstChild("SetCurrentCFrame")
-                                    if remoto and remoto:IsA("RemoteFunction") then
-                                        pcall(function() remoto:InvokeServer(destinoCFrame) end)
-                                        
-                                        contador = contador + 1
-                                        if contador % 5 == 0 then task.wait(0.01) end
-                                    end
-                                end
-                            end
-                        end
-                    end
+            -- Busca inteligente por aproximação de texto (Igual ao seu ;punish)
+            local targetPlayer = nil
+            for _, player in pairs(Players:GetPlayers()) do
+                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                    targetPlayer = player
+                    break
                 end
-                task.wait(0.1)
             end
-        end)
+            
+            if targetPlayer then
+                local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+                
+                if trafficCones then
+                    _G.PainelAdmin_BanPersistente = true
+                    _G.NomeDoBanido = targetPlayer.Name -- Registra o nome para persistência caso ele saia e reentre
+
+                    -- Notificação visual padrão VoidWare solicitada
+                    pcall(function()
+                        WindUI:Notify({
+                            Title = "Jogador Banido:", 
+                            Content = _G.NomeDoBanido .. " foi banido", 
+                            Duration = 5
+                        })
+                    end)
+
+                    task.spawn(function()
+                        -- Loop contínuo persistente (Ativo mesmo se o alvo resetar ou reentrar)
+                        while _G.PainelAdmin_BanPersistente do
+                            -- Busca contínua do jogador pelo nome salvo para garantir o rastreio pós-rejoin
+                            localcurrentPlayer = Players:FindFirstChild(_G.NomeDoBanido)
+                            
+                            if localPlayer and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                                local character = localPlayer.Character
+                                local targetHRP = character.HumanoidRootPart
+                                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                                
+                                if humanoid and humanoid.Health > 0 then
+                                    -- Define a posição de perseguição colada no corpo do alvo
+                                    local destinoBanCFrame = targetHRP.CFrame
+                                    
+                                    -- SE O ALVO SENTAR: Muda instantaneamente para a coordenada limbo do ;punish
+                                    if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                                        destinoBanCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
+                                        
+                                        local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                                        if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                                            pcall(function()
+                                                if cadeiraFisica.Anchored then
+                                                    cadeiraFisica.Anchored = false
+                                                end
+                                            end)
+                                        end
+                                    end
+                                    
+                                    local props = trafficCones:GetChildren()
+                                    
+                                    if #props > 0 then
+                                        -- Disparo assíncrono em paralelo de altíssima velocidade (Sem travas de micro-pausa)
+                                        for _, prop in pairs(props) do
+                                            if not _G.PainelAdmin_BanPersistente or not (localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                            
+                                            local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                                task.spawn(function()
+                                                    pcall(function()
+                                                        setCFrameRemote:InvokeServer(destinoBanCFrame)
+                                                    end)
+                                                end)
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                            -- Janela de tempo idêntica à velocidade do seu punish (0.1s)
+                            task.wait(0.1) 
+                        end
+                    end)
+                else
+                    pcall(function() WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3}) end)
+                end
+            else
+                pcall(function() WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado.", Duration = 3}) end)
+            end
+        else
+            pcall(function() WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4}) end)
+        end
     end
 })
 
 -- ==========================================
--- COMANDO: ;unban (SINTAXE 100% REVISADA)
+-- COMANDO: ;unban (INTERRUPÇÃO COMPLETA)
 -- ==========================================
 MainTab:Button({
     Title = ";unban",
@@ -862,11 +880,17 @@ MainTab:Button({
     Callback = function()
         local nomeParaAviso = _G.NomeDoBanido or AlvoSelecionado or "Jogador"
         
+        -- Desliga a chave lógica, quebrando o loop em segundo plano imediatamente
         _G.PainelAdmin_BanPersistente = false
         _G.NomeDoBanido = nil
         
-        pcall(function() 
-            _G.WindUI:Notify({ Title = "Jogador Desbanido:", Content = tostring(nomeParaAviso) .. " foi Desbanido", Duration = 5 }) 
+        -- Notificação visual de liberação padrão VoidWare
+        pcall(function()
+            WindUI:Notify({
+                Title = "Jogador Desbanido:", 
+                Content = tostring(nomeParaAviso) .. " foi Desbanido", 
+                Duration = 5
+            })
         end)
     end
 })
