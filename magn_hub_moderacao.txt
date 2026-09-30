@@ -69,84 +69,70 @@ end)
 -- ============================================================
 -- 2. BOTÃO: ;fling (Adaptado)
 -- ============================================================
+local LoopFlingPersistente = false
+
 MainTab:Button({
    Title = ";fling",
    Callback = function()
-       -- 1. Verifica se existe um alvo selecionado na sua variável global
-       if not AlvoSelecionado or AlvoSelecionado == "" then
-           return
-       end
-
+       if LoopFlingPersistente then return end
+       if not AlvoSelecionado or AlvoSelecionado == "" then return end
+       
        local Players = game:GetService("Players")
        local alvo = Players:FindFirstChild(AlvoSelecionado)
-       
-       if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then
-           return
-       end
+       if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then return end
        
        local characterAlvo = alvo.Character
        local rootAlvo = characterAlvo.HumanoidRootPart
        local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
-       
-       -- 2. Acessa a pasta de instâncias do Brookhaven
        local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
-       if not pastaProps then return end
        
-       -- Pega os objetos disponíveis na pasta para fazer a perseguição
-       local propsDisponiveis = pastaProps:GetChildren()
-       if #propsDisponiveis == 0 then return end
-       local prop = propsDisponiveis[1] -- Usa o primeiro prop disponível
-       
-       local remoto = prop:FindFirstChild("SetCurrentCFrame")
-       -- Encontra o assento dentro do Prop para checar se o alvo sentou
-       local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat") or prop:FindFirstChild("Seat")
-       
-       if remoto and assento then
-           -- Cria uma thread paralela para rodar a perseguição sem travar o seu menu
-           task.spawn(function()
-               local timeout = 0
-               local sentou = false
+       if pastaProps then
+           local propsDisponiveis = pastaProps:GetChildren()
+           if #propsDisponiveis == 0 then return end
+           
+           -- Puxa o objeto fixo usando o índice direto do ;punish
+           local prop = propsDisponiveis[1]
+           local remoto = prop:FindFirstChild("SetCurrentCFrame")
+           local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
+           
+           if remoto and assento then
+               LoopFlingPersistente = true
                
-               -- 3. Loop de Perseguição: Fica teleportando o Prop até o alvo sentar
-               while not sentou and timeout < 300 do
-                   -- Verifica constantemente se o jogador ainda está no servidor e vivo
-                   if not alvo or not alvo.Parent or not rootAlvo or not rootAlvo.Parent then break end
-                   
-                   -- Checa se o Occupant (quem está sentado) é o nosso alvo
-                   if assento.Occupant == humanoidAlvo then
-                       sentou = true
-                       break
+               task.spawn(function()
+                   -- Fica perseguindo o alvo até ele sentar
+                   while LoopFlingPersistente do
+                       if not alvo or not alvo.Parent or not rootAlvo or not rootAlvo.Parent or not humanoidAlvo then 
+                           break 
+                       end
+                       
+                       -- Se o alvo sentou no assento do Prop
+                       if assento.Occupant == humanoidAlvo then
+                           task.wait(0.08) -- Delay exato de sincronia do ;punish
+                           
+                           -- Teleporta 200 studs para cima APENAS UMA VEZ
+                           local posicaoFlingCeu = rootAlvo.CFrame + Vector3.new(0, 200, 0)
+                           if remoto:IsA("RemoteFunction") then
+                               remoto:InvokeServer(posicaoFlingCeu)
+                           else
+                               remoto:FireServer(posicaoFlingCeu)
+                           end
+                           
+                           -- Quebra o loop imediatamente após o disparo único
+                           break
+                       else
+                           -- Se não sentou, continua a perseguição rápida colado nele
+                           local posicaoAtualAlvo = rootAlvo.CFrame
+                           if remoto:IsA("RemoteFunction") then
+                               remoto:InvokeServer(posicaoAtualAlvo)
+                           else
+                               remoto:FireServer(posicaoAtualAlvo)
+                           end
+                       end
+                       task.wait(0.05)
                    end
-                   
-                   -- Teleporta o Prop exatamente para a posição atual do alvo
-                   local posicaoAtualAlvo = rootAlvo.CFrame
-                   if remoto:IsA("RemoteFunction") then
-                       remoto:InvokeServer(posicaoAtualAlvo)
-                   else
-                       remoto:FireServer(posicaoAtualAlvo)
-                   end
-                   
-                   -- Micro-pausa estável para manter o seu client sem congelamentos
-                   task.wait(0.05)
-                   timeout = timeout + 1
-               end
-               
-               -- 4. Se ele sentou, arremessa 200 studs para cima e finaliza o loop para gerar o Fling
-               if sentou and rootAlvo and rootAlvo.Parent then
-                   task.wait(0.1) -- Delay milimétrico para o avatar encaixar no assento
-                   
-                   -- Mantém os eixos X e Z e joga o CFrame 200 studs para cima no eixo Y
-                   local posicaoFlingCeu = rootAlvo.CFrame + Vector3.new(0, 200, 0)
-                   
-                   if remoto:IsA("RemoteFunction") then
-                       remoto:InvokeServer(posicaoFlingCeu)
-                   else
-                       remoto:FireServer(posicaoFlingCeu)
-                   end
-                   
-                   -- O loop de perseguição é encerrado de forma limpa aqui
-               end
-           end)
+                   LoopFlingPersistente = false -- Garante o encerramento do estado
+               end)
+           end
        end
    end
 })
@@ -595,48 +581,54 @@ MainTab:Button({
 MainTab:Button({
    Title = ";crash",
    Callback = function()
-       -- 1. Verifica se existe um alvo selecionado na sua variável global
-       if not AlvoSelecionado or AlvoSelecionado == "" then
-           return
-       end
+       if LoopLagAtivo then return end -- Se o loop já estiver rodando, impede duplicar
+       if not AlvoSelecionado or AlvoSelecionado == "" then return end
 
        local Players = game:GetService("Players")
        local alvo = Players:FindFirstChild(AlvoSelecionado)
+       if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then return end
        
-       -- Garante que o jogador alvo e a cabeça/corpo dele existem no servidor
-       if alvo and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
+       LoopLagAtivo = true -- Ativa a variável global conectada ao ;unlag
+       
+       task.spawn(function()
            local characterAlvo = alvo.Character
            local rootAlvo = characterAlvo.HumanoidRootPart
-           
-           -- CONCENTRAÇÃO CIRÚRGICA: Define um ponto fixo e exato 3 studs acima do alvo
-           -- CFrame.Angles força todos os postes a ficarem na mesma rotação vertical (90 graus)
-           local posicaoExataAlinhada = rootAlvo.CFrame * CFrame.new(0, 3, 0) * CFrame.Angles(math.rad(90), 0, 0)
-           
-           -- Acessa a pasta de instâncias configurada no Brookhaven
            local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
            
            if pastaProps then
-               local propsDisponiveis = pastaProps:GetChildren()
-               
-               -- Limita a execução a no máximo 15 postes esportivos
-               local limitePostes = math.min(#propsDisponiveis, 15)
-               
-               -- Envia cada um dos 15 postes exatamente para a MESMA coordenada
-               for i = 1, limitePostes do
-                   local prop = propsDisponiveis[i]
-                   local remoto = prop:FindFirstChild("SetCurrentCFrame")
+               -- O loop roda continuamente seguindo o alvo pelo mapa
+               while LoopLagAtivo do
+                   -- Para o loop automaticamente se o jogador sair do servidor ou morrer
+                   if not alvo or not alvo.Parent or not characterAlvo or not rootAlvo or not rootAlvo.Parent then
+                       LoopLagAtivo = false
+                       break
+                   end
                    
-                   if remoto then
-                       -- Sem criar órbitas ou esferas, todos se fundem no mesmo ponto
-                       if remoto:IsA("RemoteFunction") then
-                           remoto:InvokeServer(posicaoExataAlinhada)
-                       else
-                           remoto:FireServer(posicaoExataAlinhada)
+                   -- Alinhamento vertical cirúrgico apontado para cima (90 graus) na cabeça do alvo
+                   local posicaoExataAlinhada = rootAlvo.CFrame * CFrame.new(0, 3, 0) * CFrame.Angles(math.rad(90), 0, 0)
+                   local propsDisponiveis = pastaProps:GetChildren()
+                   
+                   -- Filtra e puxa exatamente até 15 postes esportivos da pasta
+                   local limitePostes = math.min(#propsDisponiveis, 15)
+                   
+                   -- Envia todos os 15 postes para a posição dele continuamente (sem teleportar para o limbo)
+                   for i = 1, limitePostes do
+                       local prop = propsDisponiveis[i]
+                       local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                       if remoto then
+                           if remoto:IsA("RemoteFunction") then
+                               remoto:InvokeServer(posixaExataAlinhada)
+                           else
+                               remoto:FireServer(posicaoExataAlinhada)
+                           end
                        end
                    end
+                   
+                   -- Taxa estável de atualização de 0.05s para os postes acompanharem o alvo sem atrasar
+                   task.wait(0.05)
                end
            end
-       end
+       end)
    end
 })
 
