@@ -768,3 +768,123 @@ MainTab:Button({
        end
    end
 })
+
+-- ==========================================
+-- COMANDO: ;ban (COM NOTIFICAÇÃO VISUAL VOIDWARE)
+-- ==========================================
+MainTab:Button({
+    Title = ";ban",
+    Icon = "terminal",
+    Callback = function()
+        if _G.PainelAdmin_BanPersistente == true then return end
+        
+        if not AlvoSelecionado or AlvoSelecionado == "" then
+            -- Notificação caso não tenha selecionado ninguém no Dropdown
+            pcall(function()
+                local gui = game:GetService("CoreGui"):FindFirstChild("WindUI") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("WindUI")
+                if gui then
+                    _G.WindUI:Notify({
+                        Title = "Aviso do Sistema",
+                        Content = "Nenhum jogador selecionado no Dropdown!",
+                        Duration = 5
+                    })
+                end
+             pcall(function()
+            return
+        end
+        
+        _G.PainelAdmin_BanPersistente = true
+        _G.NomeDoBanido = tostring(AlvoSelecionado)
+        
+        -- ENVIA A NOTIFICAÇÃO DO VOIDWARE: "Jogador Banido:", "[Nome] foi banido"
+        pcall(function()
+            _G.WindUI:Notify({
+                Title = "Jogador Banido:",
+                Content = _G.NomeDoBanido .. " foi banido",
+                Duration = 5
+            })
+        end)
+        
+        task.spawn(function()
+            local coordenadaPunishCFrame = CFrame.new(9999, -475, 9999)
+            
+            while _G.PainelAdmin_BanPersistente do
+                local targetPlayer = game:GetService("Players"):FindFirstChild(_G.NomeDoBanido)
+                local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+                
+                if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and pastaProps then
+                    local characterAlvo = targetPlayer.Character
+                    local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
+                    
+                    if humanoidAlvo and humanoidAlvo.Health > 0 then
+                        local props = pastaProps:GetChildren()
+                        
+                        if #props > 0 then
+                            local alvoSentou = false
+                            
+                            for _, prop in pairs(props) do
+                                local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
+                                if assento and assento.Occupant == humanoidAlvo then
+                                    alvoSentou = true
+                                    break
+                                end
+                            end
+                            
+                            if alvoSentou then
+                                local contador = 0
+                                for _, prop in pairs(props) do
+                                    if not _G.PainelAdmin_BanPersistente then break end
+                                    local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                                    if remoto and remoto:IsA("RemoteFunction") then
+                                        pcall(function() remoto:InvokeServer(coordenadaPunishCFrame) end)
+                                        
+                                        contador = contador + 1
+                                        if contador % 5 == 0 then task.wait(0.01) end
+                                    end
+                                end
+                            else
+                                local destinoCFrame = characterAlvo.HumanoidRootPart.CFrame
+                                local contador = 0
+                                for _, prop in pairs(props) do
+                                    if not _G.PainelAdmin_BanPersistente then break end
+                                    local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                                    if remoto and remoto:IsA("RemoteFunction") then
+                                        pcall(function() remoto:InvokeServer(destinoCFrame) end)
+                                        
+                                        contador = contador + 1
+                                        if contador % 5 == 0 then task.wait(0.01) end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                task.wait(0.2) -- Ritmo seguro para o cliente respirar
+            end
+        end)
+    end
+})
+
+-- ==========================================
+-- COMANDO: ;unban (COM NOTIFICAÇÃO VISUAL VOIDWARE)
+-- ==========================================
+MainTab:Button({
+    Title = ";unban",
+    Icon = "console",
+    Callback = function()
+        -- Guarda o nome temporariamente antes de limpar a variável para exibir o aviso correto
+        local nomeParaAviso = _G.NomeDoBanido or AlvoSelecionado or "Jogador"
+        
+        _G.PainelAdmin_BanPersistente = false
+        _G.NomeDoBanido = nil
+        
+        -- ENVIA A NOTIFICAÇÃO DO VOIDWARE: "Jogador Desbanido:", "[Nome] foi Desbanido"
+        pcall(function()
+            _G.WindUI:Notify({
+                Title = "Jogador Desbanido:",
+                Content = tostring(nomeParaAviso) .. " foi Desbanido",
+                Duration = 5
+            })
+        end)
+    end
+})
