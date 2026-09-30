@@ -369,29 +369,31 @@ MainTab:Button({
        LoopJailBanco = true
        
        task.spawn(function()
-           -- Coordenadas exatas em cima do móvel fixo do banco
-           local destinoBancoCFrame = CFrame.new(-59, -46, 206)
+           -- Coordenada da nova prisão para impedir fugas por portas automáticas
+           local destinoBancoCFrame = CFrame.new(-153, -55, 234)
+           local framesDeTeleporte = 0
+           local alvoPrezo = false
            
            while LoopJailBanco and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
                local characterAlvo = targetPlayer.Character
                local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
                
                if humanoidAlvo and humanoidAlvo.Health <= 0 then break end
-               
                local props = pastaProps:GetChildren()
                if #props == 0 then break end
                
-               local alvoSentou = false
-               for _, prop in pairs(props) do
-                   local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
-                   if assento and assento.Occupant == humanoidAlvo then
-                       alvoSentou = true
-                       break
+               if not alvoPrezo then
+                   for _, prop in pairs(props) do
+                       local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
+                       if assento and assento.Occupant == humanoidAlvo then
+                           alvoPrezo = true
+                           break
+                       end
                    end
                end
                
-               if alvoSentou then
-                   -- Teleporta o prop com o alvo para cima do móvel seguro
+               if alvoPrezo then
+                   -- Força o teleporte para a prisão segura por 5 frames seguidos
                    for _, prop in pairs(props) do
                        local remoto = prop:FindFirstChild("SetCurrentCFrame")
                        if remoto and remoto:IsA("RemoteFunction") then
@@ -399,20 +401,20 @@ MainTab:Button({
                        end
                    end
                    
-                   task.wait(0.2) -- Mantém o tempo de estabilização física no móvel antes de limpar
-                   
-                   pcall(function()
-                       local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                       local reFolder = ReplicatedStorage:FindFirstChild("RE")
-                       local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
-                       if clearEvent then
-                           clearEvent:FireServer("ClearAllProps")
-                       end
-                   end)
-                   
-                   break 
+                   framesDeTeleporte = framesDeTeleporte + 1
+                   if framesDeTeleporte >= 5 then
+                       task.wait(0.1)
+                       pcall(function()
+                           local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                           local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                           local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                           if clearEvent then
+                               clearEvent:FireServer("ClearAllProps")
+                           end
+                       end)
+                       break
+                   end
                else
-                   -- Perseguição rápida colada no alvo até ele sentar
                    local destinoCFrame = targetPlayer.Character.HumanoidRootPart.CFrame
                    for _, prop in pairs(props) do
                        local remoto = prop:FindFirstChild("SetCurrentCFrame")
@@ -422,7 +424,7 @@ MainTab:Button({
                    end
                end
                
-               task.wait(0.1) 
+               task.wait(0.05)
            end
            LoopJailBanco = false
        end)
@@ -761,64 +763,5 @@ MainTab:Button({
                end
            end
        end
-   end
-})
-
-MainTab:Button({
-   Title = ";crash (Gigantes Encaradores)",
-   Callback = function()
-       if LoopCrashPerseguidor then return end
-       if not AlvoSelecionado or AlvoSelecionado == "" then return end
-       
-       local targetPlayer = game:GetService("Players"):FindFirstChild(AlvoSelecionado)
-       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
-       
-       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
-       if not pastaProps then return end
-       
-       LoopCrashPerseguidor = true
-       
-       task.spawn(function()
-           while LoopCrashPerseguidor do
-               -- Verifica rigorosamente se o alvo ainda é válido, está vivo e no servidor
-               if not targetPlayer or not targetPlayer.Parent or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then 
-                   break 
-               end
-               
-               local rootAlvo = targetPlayer.Character.HumanoidRootPart
-               local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
-               if humanoid and humanoid.Health <= 0 then 
-                   break 
-               end
-               
-               local props = pastaProps:GetChildren()
-               if #props == 0 then 
-                   break 
-               end
-               
-               -- Posição fixa: 5 studs à frente no plano do alvo, e exatamente 8 studs para baixo
-               local posicaoFrente = rootAlvo.Position + (rootAlvo.CFrame.LookVector * 5)
-               local posicaoFinalPoste = Vector3.new(posicaoFrente.X, rootAlvo.Position.Y - 8, posicaoFrente.Z)
-               
-               -- Alinhamento perfeito: foca direto no peito do alvo mantendo a orientação estável de baixo para cima
-               local destinoEncaradoCFrame = CFrame.lookAt(posicaoFinalPoste, rootAlvo.Position)
-               
-               -- Dispara o teleporte em lote para os postes
-               for _, prop in pairs(props) do
-                   local remoto = prop:FindFirstChild("SetCurrentCFrame")
-                   if remoto and remoto:IsA("RemoteFunction") then
-                       task.spawn(function() 
-                           pcall(function() 
-                               remoto:InvokeServer(destinoEncaradoCFrame) 
-                           end) 
-                       end)
-                   end
-               end
-               
-               -- CORREÇÃO DA LATÊNCIA: 0.05 segundos poupa a sua rede e libera o uso de ferramentas locais
-               task.wait(0.05) 
-           end
-           LoopCrashPerseguidor = false
-       end)
    end
 })
