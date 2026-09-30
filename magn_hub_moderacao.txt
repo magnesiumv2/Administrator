@@ -431,99 +431,102 @@ MainTab:Button({
    end
 })
 
--- ==========================================
--- BOTÃO: ;fire (CORRIGIDO SEM A CHECAGEM LIGHTS)
--- ==========================================
 MainTab:Button({
-   Title = ";fire",
-   Callback = function()
-       if LoopFirePersistente then return end
-       if not AlvoSelecionado or AlvoSelecionado == "" then return end
-       
-       local targetPlayer = game:GetService("Players"):FindFirstChild(AlvoSelecionado)
-       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("RightFoot") then return end
-       
-       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
-       if not pastaProps then return end
-       
-       LoopFirePersistente = true
-       
-       task.spawn(function()
-           while LoopFirePersistente and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("RightFoot") do
-               local peDireitoAlvo = targetPlayer.Character.RightFoot
-               local props = pastaProps:GetChildren()
-               if #props == 0 then break end
-               
-               for _, prop in pairs(props) do
-                   local remoto = prop:FindFirstChild("SetCurrentCFrame")
-                   -- Removeu a checagem "Lights" para forçar o teleporte direto do Prop
-                   if remoto and remoto:IsA("RemoteFunction") then
-                       task.spawn(function() pcall(function() remoto:InvokeServer(peDireitoAlvo.CFrame) end) end)
-                   end
-               end
-               task.wait(0.05)
-           end
-           LoopFirePersistente = false
-       end)
-   end
+    Title = ";fire",
+    Callback = function()
+        -- Evita duplicar o loop se já estiver rodando
+        if _G.PainelAdmin_FireAtivo == true then return end
+        
+        _G.PainelAdmin_FireAtivo = true
+        print("Loop do ;fire iniciado com segurança.")
+        
+        task.spawn(function()
+            while _G.PainelAdmin_FireAtivo do
+                -- Busca a pasta diretamente na árvore de elementos a cada ciclo
+                local cam = workspace:FindFirstChildOfClass("Camera")
+                local pasta = cam and cam:FindFirstChild("001_TrafficCones")
+                
+                if pasta then
+                    local props = pasta:GetChildren()
+                    local contador = 0
+                    
+                    for _, prop in pairs(props) do
+                        -- Se o botão de desativar for clicado, encerra na mesma hora
+                        if not _G.PainelAdmin_FireAtivo then break end
+                        
+                        local remoto = prop:FindFirstChildOfClass("RemoteFunction")
+                        if remoto then
+                            pcall(function()
+                                remoto:InvokeServer("Argumento1", "Argumento2")
+                            end)
+                            
+                            -- Mecanismo Anti-Congelamento: Micro-pausa a cada 5 requisições
+                            contador = contador + 1
+                            if contador % 5 == 0 then
+                                task.wait(0.01) 
+                            end
+                        end
+                    end
+                end
+                task.wait(0.2) -- Intervalo de segurança fixo para o FPS respirar
+            end
+        end)
+    end
 })
 
--- ==========================================
--- BOTÃO: ;unfire
--- ==========================================
 MainTab:Button({
-   Title = ";unfire",
-   Callback = function()
-       LoopFirePersistente = false
-   end
+    Title = ";unfire",
+    Callback = function()
+        _G.PainelAdmin_FireAtivo = false
+        print("Loop do ;fire completamente encerrado.")
+    end
 })
 
--- ==========================================
--- BOTÃO: ;smoke (CORRIGIDO SEM A CHECAGEM LIGHTS)
--- ==========================================
 MainTab:Button({
-   Title = ";smoke",
-   Callback = function()
-       if LoopSmokePersistente then return end
-       if not AlvoSelecionado or AlvoSelecionado == "" then return end
-       
-       local targetPlayer = game:GetService("Players"):FindFirstChild(AlvoSelecionado)
-       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
-       
-       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
-       if not pastaProps then return end
-       
-       LoopSmokePersistente = true
-       
-       task.spawn(function()
-           while LoopSmokePersistente and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-               local rootAlvo = targetPlayer.Character.HumanoidRootPart
-               local props = pastaProps:GetChildren()
-               if #props == 0 then break end
-               
-               -- Distribui as coordenadas dos props ao redor do alvo sem checar "Lights"
-               for i, prop in pairs(props) do
-                   local remoto = prop:FindFirstChild("SetCurrentCFrame")
-                   if remoto and remoto:IsA("RemoteFunction") then
-                       local offset = CFrame.new((i % 3) - 1, -1, (i % 2) - 1)
-                       task.spawn(function() pcall(function() remoto:InvokeServer(rootAlvo.CFrame * offset) end) end)
-                   end
-               end
-               task.wait(0.05)
-           end
-           LoopSmokePersistente = false
-       end)
-   end
+    Title = ";smoke",
+    Callback = function()
+        if _G.PainelAdmin_SmokeAtivo == true then return end
+        
+        _G.PainelAdmin_SmokeAtivo = true
+        print("Loop do ;smoke iniciado com segurança.")
+        
+        task.spawn(function()
+            while _G.PainelAdmin_SmokeAtivo do
+                local cam = workspace:FindFirstChildOfClass("Camera")
+                local pasta = cam and cam:FindFirstChild("001_TrafficCones")
+                
+                if pasta then
+                    local props = pasta:GetChildren()
+                    local contador = 0
+                    
+                    for _, prop in pairs(props) do
+                        if not _G.PainelAdmin_SmokeAtivo then break end
+                        
+                        local remoto = prop:FindFirstChildOfClass("RemoteFunction")
+                        if remoto then
+                            pcall(function()
+                                remoto:InvokeServer("Argumento1", "Argumento2")
+                            end)
+                            
+                            contador = contador + 1
+                            if contador % 5 == 0 then
+                                task.wait(0.01)
+                            end
+                        end
+                    end
+                end
+                task.wait(0.2)
+            end
+        end)
+    end
 })
 
--- ==========================================
--- BOTÃO: ;unsmoke
--- ==========================================
 MainTab:Button({
-   Title = ";unsmoke",
-   Callback = function()
-       LoopSmokePersistente = false
-   end
+    Title = ";unsmoke",
+    Callback = function()
+        _G.PainelAdmin_SmokeAtivo = false
+        print("Loop do ;smoke completamente encerrado.")
+    end
 })
 
 local EspectandoAlvo = false
