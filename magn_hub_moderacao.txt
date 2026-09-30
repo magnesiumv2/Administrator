@@ -770,7 +770,7 @@ MainTab:Button({
 })
 
 -- ==========================================
--- COMANDO: ;ban (COM NOTIFICAÇÃO VISUAL VOIDWARE)
+-- COMANDO: ;ban (SINTAXE 100% REVISADA)
 -- ==========================================
 MainTab:Button({
     Title = ";ban",
@@ -778,31 +778,19 @@ MainTab:Button({
     Callback = function()
         if _G.PainelAdmin_BanPersistente == true then return end
         
+        -- Checagem gramatical e retorno seguros:
         if not AlvoSelecionado or AlvoSelecionado == "" then
-            -- Notificação caso não tenha selecionado ninguém no Dropdown
-            pcall(function()
-                local gui = game:GetService("CoreGui"):FindFirstChild("WindUI") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("WindUI")
-                if gui then
-                    _G.WindUI:Notify({
-                        Title = "Aviso do Sistema",
-                        Content = "Nenhum jogador selecionado no Dropdown!",
-                        Duration = 5
-                    })
-                end
-             pcall(function()
+            pcall(function() 
+                _G.WindUI:Notify({ Title = "Aviso", Content = "Selecione um alvo!", Duration = 5 }) 
+            end)
             return
         end
         
         _G.PainelAdmin_BanPersistente = true
         _G.NomeDoBanido = tostring(AlvoSelecionado)
         
-        -- ENVIA A NOTIFICAÇÃO DO VOIDWARE: "Jogador Banido:", "[Nome] foi banido"
-        pcall(function()
-            _G.WindUI:Notify({
-                Title = "Jogador Banido:",
-                Content = _G.NomeDoBanido .. " foi banido",
-                Duration = 5
-            })
+        pcall(function() 
+            _G.WindUI:Notify({ Title = "Jogador Banido:", Content = _G.NomeDoBanido .. " foi banido", Duration = 5 }) 
         end)
         
         task.spawn(function()
@@ -859,32 +847,26 @@ MainTab:Button({
                         end
                     end
                 end
-                task.wait(0.2) -- Ritmo seguro para o cliente respirar
+                task.wait(0.2)
             end
         end)
     end
 })
 
 -- ==========================================
--- COMANDO: ;unban (COM NOTIFICAÇÃO VISUAL VOIDWARE)
+-- COMANDO: ;unban (SINTAXE 100% REVISADA)
 -- ==========================================
 MainTab:Button({
     Title = ";unban",
     Icon = "console",
     Callback = function()
-        -- Guarda o nome temporariamente antes de limpar a variável para exibir o aviso correto
         local nomeParaAviso = _G.NomeDoBanido or AlvoSelecionado or "Jogador"
         
         _G.PainelAdmin_BanPersistente = false
         _G.NomeDoBanido = nil
         
-        -- ENVIA A NOTIFICAÇÃO DO VOIDWARE: "Jogador Desbanido:", "[Nome] foi Desbanido"
-        pcall(function()
-            _G.WindUI:Notify({
-                Title = "Jogador Desbanido:",
-                Content = tostring(nomeParaAviso) .. " foi Desbanido",
-                Duration = 5
-            })
+        pcall(function() 
+            _G.WindUI:Notify({ Title = "Jogador Desbanido:", Content = tostring(nomeParaAviso) .. " foi Desbanido", Duration = 5 }) 
         end)
     end
 })
