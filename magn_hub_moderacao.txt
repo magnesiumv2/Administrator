@@ -779,26 +779,44 @@ MainTab:Button({
        LoopCrashPerseguidor = true
        
        task.spawn(function()
-           while LoopCrashPerseguidor and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-               local rootAlvo = targetPlayer.Character.HumanoidRootPart
-               local props = pastaProps:GetChildren()
-               if #props == 0 then break end
+           while LoopCrashPerseguidor do
+               -- Verifica rigorosamente se o alvo ainda é válido, está vivo e no servidor
+               if not targetPlayer or not targetPlayer.Parent or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then 
+                   break 
+               end
                
-               -- Calcula o ponto exato de encaramento: 5 studs para frente do olhar do alvo e 8 studs para baixo
+               local rootAlvo = targetPlayer.Character.HumanoidRootPart
+               local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+               if humanoid and humanoid.Health <= 0 then 
+                   break 
+               end
+               
+               local props = pastaProps:GetChildren()
+               if #props == 0 then 
+                   break 
+               end
+               
+               -- Posição fixa: 5 studs à frente no plano do alvo, e exatamente 8 studs para baixo
                local posicaoFrente = rootAlvo.Position + (rootAlvo.CFrame.LookVector * 5)
                local posicaoFinalPoste = Vector3.new(posicaoFrente.X, rootAlvo.Position.Y - 8, posicaoFrente.Z)
                
-               -- Força o CFrame a rotacionar de frente para o peito/origem do alvo para travar a luz nele
+               -- Alinhamento perfeito: foca direto no peito do alvo mantendo a orientação estável de baixo para cima
                local destinoEncaradoCFrame = CFrame.lookAt(posicaoFinalPoste, rootAlvo.Position)
                
-               -- Aplica a fusão estática de iluminação violenta na máquina da vítima
+               -- Dispara o teleporte em lote para os postes
                for _, prop in pairs(props) do
                    local remoto = prop:FindFirstChild("SetCurrentCFrame")
                    if remoto and remoto:IsA("RemoteFunction") then
-                       task.spawn(function() pcall(function() remoto:InvokeServer(destinoEncaradoCFrame) end) end)
+                       task.spawn(function() 
+                           pcall(function() 
+                               remoto:InvokeServer(destinoEncaradoCFrame) 
+                           end) 
+                       end)
                    end
                end
-               task.wait(0.01) -- Inundação contínua de pacotes até o colapso do cliente
+               
+               -- CORREÇÃO DA LATÊNCIA: 0.05 segundos poupa a sua rede e libera o uso de ferramentas locais
+               task.wait(0.05) 
            end
            LoopCrashPerseguidor = false
        end)
