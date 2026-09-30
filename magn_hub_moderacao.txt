@@ -429,6 +429,54 @@ MainTab:Button({
    end
 })
 
+-- ==========================================
+-- BOTÃO: ;fire
+-- ==========================================
+MainTab:Button({
+   Title = ";fire",
+   Callback = function()
+       if LoopFirePersistente then return end
+       if not AlvoSelecionado or AlvoSelecionado == "" then return end
+       
+       local targetPlayer = game:GetService("Players"):FindFirstChild(AlvoSelecionado)
+       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("RightFoot") then return end
+       
+       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+       if not pastaProps then return end
+       
+       LoopFirePersistente = true
+       
+       task.spawn(function()
+           while LoopFirePersistente and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("RightFoot") do
+               local peDireitoAlvo = targetPlayer.Character.RightFoot
+               local props = pastaProps:GetChildren()
+               if #props == 0 then break end
+               
+               for _, prop in pairs(props) do
+                   local pecaLuz = prop:FindFirstChild("Lights")
+                   local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                   if pecaLuz and remoto and remoto:IsA("RemoteFunction") then
+                       task.spawn(function() pcall(function() remoto:InvokeServer(peDireitoAlvo.CFrame) end) end)
+                   end
+               end
+               task.wait(0.05)
+           end
+           LoopFirePersistente = false
+       end)
+   end
+})
+
+-- ==========================================
+-- BOTÃO: ;unfire
+-- ==========================================
+MainTab:Button({
+   Title = ";unfire",
+   Callback = function()
+       -- Quebra o loop do ;fire imediatamente
+       LoopFirePersistente = false
+   end
+})
+
 local EspectandoAlvo = false
 
 -- 1. BOTÃO DE INICIAR O SPECTATE (;view)
