@@ -352,92 +352,69 @@ MainTab:Button({
     end
 })
 
+-
+local EspectandoAlvo = false
+
+-- 1. BOTÃO DE INICIAR O SPECTATE (;view)
 MainTab:Button({
-    Title = ";view",
-    Callback = function()
-        if AlvoSelecionado ~= "" then
-            local Players = game:GetService("Players")
-            local targetPlayer = nil
-            
-            -- Busca o jogador alvo pelo nome ou Nick no Dropdown
-            for _, player in pairs(Players:GetPlayers()) do
-                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-                    targetPlayer = player
-                    break
-                end
-            end
-            
-            if targetPlayer then
-                local camera = workspace.CurrentCamera
-                
-                -- Se já houver um monitoramento ativo de View, desliga ele antes de iniciar o novo
-                if _G.ViewConnection then 
-                    _G.ViewConnection:Disconnect() 
-                    _G.ViewConnection = nil
-                end
-                
-                -- Função interna para focar a câmera no personagem atual
-                local function focarNoAlvo(character)
-                    if character then
-                        local humanoid = character:WaitForChild("Humanoid", 5)
-                        if humanoid then
-                            camera.CameraSubject = humanoid
-                        end
-                    end
-                end
-                
-                -- 1. Foca imediatamente no corpo atual do alvo se ele estiver vivo
-                if targetPlayer.Character then
-                    focarNoAlvo(targetPlayer.Character)
-                end
-                
-                -- 2. 🔄 O SEGREDO: Cria o ouvinte persistente. Sempre que ele renascer, re-foca a câmera automaticamente
-                _G.ViewConnection = targetPlayer.CharacterAdded:Connect(function(newCharacter)
-                    focarNoAlvo(newCharacter)
-                end)
-                
-                WindUI:Notify({
-                    Title = "🎥 Câmera Ativa",
-                    Content = "Assistindo " .. targetPlayer.Name .. ". O foco persistirá mesmo se ele renascer.",
-                    Duration = 3
-                })
-                
-                -- Se o alvo sair do servidor, limpa a conexão para economizar memória
-                targetPlayer.AncestryChanged:Connect(function(_, parent)
-                    if not parent and _G.ViewConnection then
-                        _G.ViewConnection:Disconnect()
-                        _G.ViewConnection = nil
-                    end
-                end)
-            else
-                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado.", Duration = 3})
-            end
-        else
-            WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4})
-        end
-    end
+   Title = ";view",
+   Callback = function()
+       -- Se já estiver espectando, evita criar loops sobrepostos
+       if EspectandoAlvo then return end
+       
+       -- Verifica se existe um alvo selecionado no seu Dropdown
+       if not AlvoSelecionado or AlvoSelecionado == "" then return end
+       
+       local Players = game:GetService("Players")
+       local alvo = Players:FindFirstChild(AlvoSelecionado)
+       if not alvo then return end
+       
+       EspectandoAlvo = true
+       
+       -- Thread em segundo plano para monitorar o corpo do alvo continuamente
+       task.spawn(function()
+           local camera = workspace.CurrentCamera
+           
+           while EspectandoAlvo do
+               -- Se o jogador sair do servidor, desliga o modo espectador
+               if not alvo or not alvo.Parent then
+                   EspectandoAlvo = false
+                   camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                   break
+               end
+               
+               -- Puxa o personagem atual do alvo
+               local charAlvo = alvo.Character
+               if charAlvo then
+                   local humanoidAlvo = charAlvo:FindFirstChildOfClass("Humanoid")
+                   
+                   -- Se a câmera não estiver focada no Humanoid atual dele (porque ele renasceu ou mudou)
+                   if humanoidAlvo and camera.CameraSubject ~= humanoidAlvo then
+                       -- Atualiza o foco da câmera para o novo corpo instantaneamente
+                       camera.CameraSubject = humanoidAlvo
+                   end
+               end
+               
+               -- Verifica a cada 0.3 segundos para não pesar o processamento do menu
+               task.wait(0.3)
+           end
+       end)
+   end
 })
 
+-- 2. BOTÃO DE PARAR O SPECTATE (;unview)
 MainTab:Button({
-    Title = ";unview",
-    Callback = function()
-        -- Corta o loop de monitoramento do alvo se ele estiver ativo
-        if _G.ViewConnection then
-            _G.ViewConnection:Disconnect()
-            _G.ViewConnection = nil
-        end
-        
-        -- Retorna a câmera para o seu próprio personagem
-        local player = game:GetService("Players").LocalPlayer
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            workspace.CurrentCamera.CameraSubject = player.Character.Humanoid
-            WindUI:Notify({
-                Title = "🎥 Câmera Resetada",
-                Content = "Você voltou a olhar para o seu próprio personagem.",
-                Duration = 3
-            })
-        end
-    end
+   Title = ";unview",
+   Callback = function()
+       -- Desativa a variável de controle para encerrar o loop de monitoramento
+       EspectandoAlvo = false
+       
+       -- Retorna o foco da câmera de volta para o SEU próprio personagem de forma segura
+       local camera = workspace.CurrentCamera
+       if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+           camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+       end
+   end
 })
 
 MainTab:Button({
