@@ -430,7 +430,7 @@ MainTab:Button({
 })
 
 -- ==========================================
--- BOTÃO: ;fire
+-- BOTÃO: ;fire (CORRIGIDO SEM A CHECAGEM LIGHTS)
 -- ==========================================
 MainTab:Button({
    Title = ";fire",
@@ -453,9 +453,9 @@ MainTab:Button({
                if #props == 0 then break end
                
                for _, prop in pairs(props) do
-                   local pecaLuz = prop:FindFirstChild("Lights")
                    local remoto = prop:FindFirstChild("SetCurrentCFrame")
-                   if pecaLuz and remoto and remoto:IsA("RemoteFunction") then
+                   -- Removeu a checagem "Lights" para forçar o teleporte direto do Prop
+                   if remoto and remoto:IsA("RemoteFunction") then
                        task.spawn(function() pcall(function() remoto:InvokeServer(peDireitoAlvo.CFrame) end) end)
                    end
                end
@@ -472,7 +472,6 @@ MainTab:Button({
 MainTab:Button({
    Title = ";unfire",
    Callback = function()
-       -- Quebra o loop do ;fire imediatamente
        LoopFirePersistente = false
    end
 })
