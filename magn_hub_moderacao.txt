@@ -1,3 +1,6 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
 -- 1. CARREGAMENTO DA BIBLIOTECA (Link oficial bruto do repositório)
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
