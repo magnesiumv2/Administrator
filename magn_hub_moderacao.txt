@@ -360,7 +360,6 @@ MainTab:Button({
     end
 })
 
--
 local EspectandoAlvo = false
 
 -- 1. BOTÃO DE INICIAR O SPECTATE (;view)
