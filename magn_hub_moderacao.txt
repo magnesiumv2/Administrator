@@ -794,7 +794,7 @@ MainTab:Button({
         end)
         
         task.spawn(function()
-            local coordenadaPunishCFrame = CFrame.new(9999, -475, 9999)
+            local coordenadaPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
             
             while _G.PainelAdmin_BanPersistente do
                 local targetPlayer = game:GetService("Players"):FindFirstChild(_G.NomeDoBanido)
@@ -847,7 +847,7 @@ MainTab:Button({
                         end
                     end
                 end
-                task.wait(0.2)
+                task.wait(0.1)
             end
         end)
     end
