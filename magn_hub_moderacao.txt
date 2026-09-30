@@ -81,24 +81,14 @@ MainTab:Button({
        if not AlvoSelecionado or AlvoSelecionado == "" then return end
        
        -- Faça isso:
-local targetPlayer = Players:FindFirstChild(AlvoSelecionado) -- Busca direta e limpa
+-- LINHA 91 EM DIANTE:
+local targetPlayer = Players:FindFirstChild(AlvoSelecionado)
 
-if not targetPlayer or not targetPlayer.Character then 
-    return -- Para a execução se o jogador não estiver no servidor
+if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+return
 end
-       
-       for _, player in pairs(Players:GetPlayers()) do
-           if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
-               targetPlayer = player
-               break
-           end
-       end
-       
-       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then 
-           return 
-       end
-       
-       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+
+local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
        if not pastaProps then return end
        
        LoopFlingPersistente = true
