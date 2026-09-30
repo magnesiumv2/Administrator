@@ -80,7 +80,7 @@ MainTab:Button({
        if LoopFlingPersistente then return end
        if not AlvoSelecionado or AlvoSelecionado == "" then return end
        
-       local Players = game:GetService("Players")
+local targetPlayer = Players:FindFirstChild(AlvoSelecionado)
        local targetPlayer = nil
        
        for _, player in pairs(Players:GetPlayers()) do
