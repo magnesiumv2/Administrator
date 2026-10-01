@@ -467,6 +467,83 @@ MainTab:Button({
 })
 
 MainTab:Button({
+   Title = ";jail",
+   Callback = function()
+       if LoopJailBanco then return end
+       if not AlvoSelecionado or AlvoSelecionado == "" then return end
+       
+       local targetPlayer = game:GetService("Players"):FindFirstChild(AlvoSelecionado)
+       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+       
+       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
+       if not pastaProps then return end
+       
+       LoopJailBanco = true
+       
+       task.spawn(function()
+           -- Coordenada da nova prisão para impedir fugas por portas automáticas
+           local destinoBancoCFrame = CFrame.new(-153, -55, 234)
+           local framesDeTeleporte = 0
+           local alvoPrezo = false
+           
+           while LoopJailBanco and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+               local characterAlvo = targetPlayer.Character
+               local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
+               
+               if humanoidAlvo and humanoidAlvo.Health <= 0 then break end
+               local props = pastaProps:GetChildren()
+               if #props == 0 then break end
+               
+               if not alvoPrezo then
+                   for _, prop in pairs(props) do
+                       local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
+                       if assento and assento.Occupant == humanoidAlvo then
+                           alvoPrezo = true
+                           break
+                       end
+                   end
+               end
+               
+               if alvoPrezo then
+                   -- Força o teleporte para a prisão segura por 5 frames seguidos
+                   for _, prop in pairs(props) do
+                       local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                       if remoto and remoto:IsA("RemoteFunction") then
+                           task.spawn(function() pcall(function() remoto:InvokeServer(destinoBancoCFrame) end) end)
+                       end
+                   end
+                   
+                   framesDeTeleporte = framesDeTeleporte + 1
+                   if framesDeTeleporte >= 5 then
+                       task.wait(0.1)
+                       pcall(function()
+                           local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                           local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                           local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                           if clearEvent then
+                               clearEvent:FireServer("ClearAllProps")
+                           end
+                       end)
+                       break
+                   end
+               else
+                   local destinoCFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+                   for _, prop in pairs(props) do
+                       local remoto = prop:FindFirstChild("SetCurrentCFrame")
+                       if remoto and remoto:IsA("RemoteFunction") then
+                           task.spawn(function() pcall(function() remoto:InvokeServer(destinoCFrame) end) end)
+                       end
+                   end
+               end
+               
+               task.wait(0.05)
+           end
+           LoopJailBanco = false
+       end)
+   end
+})
+
+MainTab:Button({
     Title = ";disconnectserver",
     Desc = "Inicia um tráfego de rede imenso, Pode desligar o servidor e (Erro: 277)",
     Callback = function()
