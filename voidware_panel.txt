@@ -509,7 +509,7 @@ MainTab:Button({
                         fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
                     end
                 end
-                if m % 15 == 0 then task.wait() end
+                if m % 15 == 0 then task.wait(0.1) end
             end
         end)
 
