@@ -468,7 +468,7 @@ MainTab:Button({
 
 MainTab:Button({
     Title = ";disconnectserver",
-    Desc = "Inicia um tráfego de rede imenso, Pode desligar o servidor e (Erro: 277)
+    Desc = "Inicia um tráfego de rede imenso, Pode desligar o servidor e (Erro: 277)",
     Callback = function()
         local player = game:GetService("Players").LocalPlayer
         if not player then return end
