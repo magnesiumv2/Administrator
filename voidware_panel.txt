@@ -3,9 +3,9 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
 
 -- 2. Cria a Janela Principal (Padrão VoidWare)
 local Window = WindUI:CreateWindow({
-    Title = "Admin",
+    Title = "anonymus panel",
     SubTitle = "Administração & Utilitários",
-    Icon = "terminal",
+    Icon = "door-open",
     Size = UDim2.fromOffset(550, 380),
     Theme = "Dark"
 })
