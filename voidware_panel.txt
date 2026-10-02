@@ -660,3 +660,100 @@ MainTab:Button({
         WindUI:Notify({ Title = "Script de Dupe", Content = "Processo finalizado com sucesso.", Duration = 5 })
     end
 })
+
+MainTab:AddButton({
+   Title = ";hugeemporarybottleneck",
+   Desc = "envia um gargalo agressivo temporário, função principal travar e desligar o servidor",
+   Callback = function()
+   -- VERSÃO CORRIGIDA E ULTRA RÁPIDA (OTIMIZADA PARA BOTÃO)
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+
+Crash:AddButton({
+    Name = "Executar Sistema de Dupe",
+    Callback = function()
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local rootpart = character:WaitForChild("HumanoidRootPart")
+        local backpack = LocalPlayer:WaitForChild("Backpack")
+        local remoteStorage = ReplicatedStorage:WaitForChild("RE")
+        
+        -- Encontra o controle remoto de ferramentas
+        local toolRemote = remoteStorage:FindFirstChild("1Too1l")
+        
+        if toolRemote and toolRemote:IsA("RemoteFunction") then
+            -- 1. Loop Ultra Rápido (Spam em paralelo para pegar e deletar instantaneamente)
+            for m = 1, 535 do
+                task.spawn(function()
+                    -- Solicita a ferramenta ao servidor
+                    local args1 = { [1] = "PickingTools", [2] = "FireHose" }
+                    toolRemote:InvokeServer(unpack(args1))
+                    
+                    -- Deleta a ferramenta imediatamente assim que ela entra na Backpack
+                    local fireHose = backpack:FindFirstChild("FireHose")
+                    if fireHose and fireHose:FindFirstChild("ToolSound") then
+                        local args2 = { [1] = "FireHose", [2] = "DestroyFireHose" }
+                        pcall(function() 
+                            fireHose.ToolSound:FireServer(unpack(args2)) 
+                        end)
+                    end
+                end)
+            end
+        end
+
+        -- Pequena pausa para o servidor processar o volume massivo de itens
+        task.wait(0.1)
+
+        -- 2. Salvar posição antiga e teleportar para o Void
+        local oldcf = rootpart.CFrame
+        rootpart.CFrame = CFrame.new(999999, -475, 999999) -- Coordenada extrema corrigida para evitar crash visual
+
+        -- Espera o personagem sumir/resetar com limite de segurança para não travar o script
+        local timeout = 0
+        while rootpart and rootpart.Parent ~= nil and timeout < 30 do
+            task.wait()
+            timeout = timeout + 1
+        end
+
+        -- Aguarda o novo personagem carregar após o Void/Reset
+        character = LocalPlayer.CharacterAdded:Wait()
+        rootpart = character:WaitForChild("HumanoidRootPart")
+        backpack = LocalPlayer:WaitForChild("Backpack")
+
+        -- Retornar à posição original com o novo corpo
+        rootpart.CFrame = oldcf
+        
+        StarterGui:SetCore("SendNotification", {
+            Title = "Script de Dupe",
+            Text = "Shutdown Concluído, Agora Vai Desligar",
+            Button1 = "Ok",
+            Duration = 5
+        })
+        
+        task.wait(0.1)
+
+        -- 3. Equipar todas as FireHose restantes da Backpack para o Personagem
+        for _, item in ipairs(backpack:GetChildren()) do
+            if item.Name == "FireHose" and item:IsA("Tool") then
+                item.Parent = character
+            end
+        end
+
+        task.wait(0.2)
+        
+        StarterGui:SetCore("SendNotification", {
+            Title = "Script de Dupe",
+            Text = "Iniciando duplicação, seja paciente",
+            Button1 = "Ok",
+            Duration = 5
+        })
+        
+        task.wait(0.5)
+
+        -- Teleporte final de processamento/descarte
+        if rootpart then
+            rootpart.CFrame = CFrame.new(9999, -475, 9999)
+        end
+    end
+})
