@@ -493,16 +493,11 @@ MainTab:Button({
                         Duration = 3
                     })
 
-                    if _G.KillAtivo then 
-                        _G.KillAtivo = false 
-                        task.wait(0.1) 
-                    end
-                    _G.KillAtivo = true
-
                     task.spawn(function()
                         local finalizado = false
 
-                        while _G.KillAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                        -- Loop roda de forma isolada enquanto o jogador existir e for válido
+                        while targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
                             if finalizado then break end
 
                             local character = targetPlayer.Character
@@ -534,7 +529,7 @@ MainTab:Button({
                             
                             if #props > 0 then
                                 for _, prop in pairs(props) do
-                                    if not _G.KillAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                    if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
                                     
                                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                     if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
@@ -565,13 +560,12 @@ MainTab:Button({
                             task.wait(0.1) 
                         end
                         
-                        if _G.KillAtivo or finalizado then
+                        if finalizado then
                             WindUI:Notify({
                                 Title = "Jogador Punido", 
                                 Content = "o jogador foi preso no cofre", 
                                 Duration = 5
                             })
-                            _G.KillAtivo = false
                         end
                     end)
                 else
