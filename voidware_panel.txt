@@ -671,9 +671,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
-Crash:AddButton({
-    Name = "Executar Sistema de Dupe",
-    Callback = function()
         local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
         local rootpart = character:WaitForChild("HumanoidRootPart")
         local backpack = LocalPlayer:WaitForChild("Backpack")
