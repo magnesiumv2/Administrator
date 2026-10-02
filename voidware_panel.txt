@@ -661,7 +661,7 @@ MainTab:Button({
     end
 })
 
-MainTab:AddButton({
+MainTab:Button({
    Title = ";hugeemporarybottleneck",
    Desc = "envia um gargalo agressivo temporário, função principal travar e desligar o servidor",
    Callback = function()
