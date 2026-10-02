@@ -467,77 +467,123 @@ MainTab:Button({
 })
 
 MainTab:Button({
-   Title = ";jail",
-   Desc = "Envia o jogador até o banco e prende ele no cofre",
-   Callback = function()
-       if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
-       
-       local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
-       if not pastaProps then return end
-       
-       LoopJailBanco = true
-       
-       task.spawn(function()
-           -- Coordenada da nova prisão para impedir fugas por portas automáticas
-           local destinoBancoCFrame = CFrame.new(-153, -55, 234)
-           local framesDeTeleporte = 0
-           local alvoPrezo = false
-           
-           while LoopJailBanco and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-               local characterAlvo = targetPlayer.Character
-               local humanoidAlvo = characterAlvo:FindFirstChildOfClass("Humanoid")
-               
-               if humanoidAlvo and humanoidAlvo.Health <= 0 then break end
-               local props = pastaProps:GetChildren()
-               if #props == 0 then break end
-               
-               if not alvoPrezo then
-                   for _, prop in pairs(props) do
-                       local assento = prop:FindFirstChildOfClass("Seat") or prop:FindFirstChildOfClass("VehicleSeat")
-                       if assento and assento.Occupant == humanoidAlvo then
-                           alvoPrezo = true
-                           break
-                       end
-                   end
-               end
-               
-               if alvoPrezo then
-                   -- Força o teleporte para a prisão segura por 5 frames seguidos
-                   for _, prop in pairs(props) do
-                       local remoto = prop:FindFirstChild("SetCurrentCFrame")
-                       if remoto and remoto:IsA("RemoteFunction") then
-                           task.spawn(function() pcall(function() remoto:InvokeServer(destinoBancoCFrame) end) end)
-                       end
-                   end
-                   
-                   framesDeTeleporte = framesDeTeleporte + 1
-                   if framesDeTeleporte >= 5 then
-                       task.wait(0.1)
-                       pcall(function()
-                           local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                           local reFolder = ReplicatedStorage:FindFirstChild("RE")
-                           local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
-                           if clearEvent then
-                               clearEvent:FireServer("ClearAllProps")
-                           end
-                       end)
-                       break
-                   end
-               else
-                   local destinoCFrame = targetPlayer.Character.HumanoidRootPart.CFrame
-                   for _, prop in pairs(props) do
-                       local remoto = prop:FindFirstChild("SetCurrentCFrame")
-                       if remoto and remoto:IsA("RemoteFunction") then
-                           task.spawn(function() pcall(function() remoto:InvokeServer(destinoCFrame) end) end)
-                       end
-                   end
-               end
-               
-               task.wait(0.05)
-           end
-           LoopJailBanco = false
-       end)
-   end
+    Title = ";jail",
+    Desc = "teleporta o jogador para o banco e prende ele no cofre",
+    Callback = function()
+        if AlvoSelecionado ~= "" then
+            local Players = game:GetService("Players")
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            
+            local targetPlayer = nil
+            for _, player in pairs(Players:GetPlayers()) do
+                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                    targetPlayer = player
+                    break
+                end
+            end
+            
+            if targetPlayer then
+                local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+                
+                if trafficCones then
+                    WindUI:Notify({
+                        Title = "🔨 Punição Iniciada", 
+                        Content = "Teleportando props para " .. targetPlayer.Name .. ". Monitorando assentos...", 
+                        Duration = 3
+                    })
+
+                    if _G.KillAtivo then 
+                        _G.KillAtivo = false 
+                        task.wait(0.1) 
+                    end
+                    _G.KillAtivo = true
+
+                    task.spawn(function()
+                        local finalizado = false
+
+                        while _G.KillAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                            if finalizado then break end
+
+                            local character = targetPlayer.Character
+                            local targetHRP = character.HumanoidRootPart
+                            local humanoid = character:FindFirstChildOfClass("Humanoid")
+                            
+                            if humanoid and humanoid.Health <= 0 then
+                                break
+                            end
+                            
+                            local destinoPunishCFrame = targetHRP.CFrame
+                            local alvoSentou = false
+                            
+                            if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                                destinoPunishCFrame = CFrame.new(-153, -55, 234)
+                                alvoSentou = true
+                                
+                                local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                                if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                                    pcall(function()
+                                        if cadeiraFisica.Anchored then
+                                            cadeiraFisica.Anchored = false
+                                        end
+                                    end)
+                                end
+                            end
+                            
+                            local props = trafficCones:GetChildren()
+                            
+                            if #props > 0 then
+                                for _, prop in pairs(props) do
+                                    if not _G.KillAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                    
+                                    local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                    if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                        task.spawn(function()
+                                            pcall(function()
+                                                setCFrameRemote:InvokeServer(destinoPunishCFrame)
+                                            end)
+                                        end)
+                                    end
+                                end
+                            end
+                            
+                            if alvoSentou then
+                                finalizado = true
+                                task.wait(0.1) 
+                                
+                                pcall(function()
+                                    local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                                    local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                                    if clearEvent then
+                                        clearEvent:FireServer("ClearAllProps")
+                                    end
+                                end)
+                                
+                                break 
+                            end
+                            
+                            task.wait(0.1) 
+                        end
+                        
+                        if _G.KillAtivo or finalizado then
+                            WindUI:Notify({
+                                Title = "Jogador Punido", 
+                                Content = "o jogador foi preso no cofre", 
+                                Duration = 5
+                            })
+                            _G.KillAtivo = false
+                        end
+                    end)
+                else
+                    WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
+                end
+            else
+                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado.", Duration = 3})
+            end
+        else
+            WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4})
+        end
+    end
 })
 
 MainTab:Button({
