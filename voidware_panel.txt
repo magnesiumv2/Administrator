@@ -468,12 +468,8 @@ MainTab:Button({
 
 MainTab:Button({
    Title = ";jail",
-   Desc = "Envia o jogador até o banco e prede ele no cofre",
+   Desc = "Envia o jogador até o banco e prende ele no cofre",
    Callback = function()
-       if LoopJailBanco then return end
-       if not AlvoSelecionado or AlvoSelecionado == "" then return end
-       
-       local targetPlayer = game:GetService("Players"):FindFirstChild(AlvoSelecionado)
        if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
        
        local pastaProps = workspace.WorkspaceCom:FindFirstChild("001_TrafficCones")
