@@ -385,18 +385,22 @@ MainTab:Button({
                     task.spawn(function()
                         local finalizado = false
 
-                        while _G.KillAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                        while _G.KillAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character do
                             if finalizado then break end
 
                             local character = targetPlayer.Character
-                            local targetHRP = character.HumanoidRootPart
                             local humanoid = character:FindFirstChildOfClass("Humanoid")
                             
                             if humanoid and humanoid.Health <= 0 then
                                 break
                             end
                             
-                            local destinoPunishCFrame = targetHRP.CFrame
+                            -- Identifica a perna direita do alvo (compatível com R6 e R15)
+                            local pernaDireita = character:FindFirstChild("RightLowerLeg") or character:FindFirstChild("Right Leg") or character:FindFirstChild("RightFoot") or character:FindFirstChild("HumanoidRootPart")
+                            
+                            if not pernaDireita then break end
+                            
+                            local destinoPunishCFrame = pernaDireita.CFrame
                             local alvoSentou = false
                             
                             if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
@@ -417,11 +421,10 @@ MainTab:Button({
                             
                             if #props > 0 then
                                 for _, prop in pairs(props) do
-                                    if not _G.KillAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                    if not _G.KillAtivo or not targetPlayer.Character then break end
                                     
                                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                     if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                        -- Mantido task.defer para agendar o tráfego de rede sem engasgar o frame rate da tela
                                         task.defer(function()
                                             pcall(function()
                                                 setCFrameRemote:InvokeServer(destinoPunishCFrame)
@@ -446,7 +449,7 @@ MainTab:Button({
                                 break 
                             end
                             
-                            task.wait(0.2) -- Otimizado para evitar gargalo de rede na sua máquina
+                            task.wait(0.2) 
                         end
                         
                         if _G.KillAtivo or finalizado then
