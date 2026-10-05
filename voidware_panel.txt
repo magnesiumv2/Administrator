@@ -1,32 +1,4 @@
--- 1. Cria uma função protegida para fazer o download sem crashar
-local sucesso, resultado = pcall(function()
-    return game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")
-end)
-
--- 2. Define a variável da interface para o resto do seu painel usar
-local WindUI
-
--- 3. Verifica se o download deu certo e se o conteúdo não veio vazio
-if sucesso and resultado and resultado ~= "" then
-    -- Tenta compilar o código baixado
-    local carregarCodigo = loadstring(resultado)
-    
-    if carregarCodigo then
-        -- Executa a biblioteca e guarda o objeto na variável WindUI
-        WindUI = carregarCodigo()
-    else
-        warn("WindUI: Erro interno de compilação no código baixado.")
-    end
-else
-    -- Se a rede do seu executor falhar, ele cai aqui em vez de dar o erro vermelho
-    warn("WindUI: Falha na requisição de rede. O servidor ou o executor bloqueou o download.")
-    if not sucesso then
-        print("Detalhe do erro:", resultado)
-    end
-end
-
--- 4. O restante das suas 874 linhas continua exatamente igual abaixo...
--- Exemplo: local Window = WindUI:CreateWindow({...})
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/magnesiumv2/Administrator/refs/heads/main/main.lua"))()
 
 -- 2. Cria a Janela Principal (Padrão VoidWare)
 local Window = WindUI:CreateWindow({
