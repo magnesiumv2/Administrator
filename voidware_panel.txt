@@ -274,7 +274,7 @@ MainTab:Button({
 
                     if _G.PunishAtivo then 
                         _G.PunishAtivo = false 
-                        task.wait(0.2) -- Tempo ligeiramente maior para garantir a limpeza da thread anterior
+                        task.wait(0.2) 
                     end
                     _G.PunishAtivo = true
 
@@ -290,10 +290,9 @@ MainTab:Button({
                             
                             local destinoPunishCFrame = targetHRP.CFrame
                             
-                            -- Verificação de assento
                             if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
-                                -- Evita crash de física usando um limite seguro e numérico realista (ex: 500000) em vez de floats infinitos
-                                destinoPunishCFrame = CFrame.new(999999, -501, -999999)
+                                -- Restaurado para o valor original solicitado por você
+                                destinoPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
                                 
                                 local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
                                 if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
@@ -313,17 +312,16 @@ MainTab:Button({
                                     
                                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                     if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                        -- Alterado para task.defer para escalonar a execução e não travar o Frame Rate do cliente
+                                        -- Mantido task.defer para agendar o envio em segundo plano e evitar o travamento visual
                                         task.defer(function()
                                             pcall(function()
-                                                -- Timeout de segurança: InvokeServer em loop consome muita banda
                                                 setCFrameRemote:InvokeServer(destinoPunishCFrame)
                                             end)
                                         end)
                                     end
                                 end
                             end
-                            -- Um wait ligeiramente maior de 0.2 evita spam de pacotes na fila de rede (Network Buffer)
+                            -- Mantido 0.2 para evitar sobrecarga de rede simultânea na sua tela
                             task.wait(0.2) 
                         end
                         
