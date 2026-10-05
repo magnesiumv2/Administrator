@@ -378,7 +378,7 @@ MainTab:Button({
 
                     if _G.KillAtivo then 
                         _G.KillAtivo = false 
-                        task.wait(0.1) 
+                        task.wait(0.2) 
                     end
                     _G.KillAtivo = true
 
@@ -421,7 +421,8 @@ MainTab:Button({
                                     
                                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                     if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                        task.spawn(function()
+                                        -- Mantido task.defer para agendar o tráfego de rede sem engasgar o frame rate da tela
+                                        task.defer(function()
                                             pcall(function()
                                                 setCFrameRemote:InvokeServer(destinoPunishCFrame)
                                             end)
@@ -445,7 +446,7 @@ MainTab:Button({
                                 break 
                             end
                             
-                            task.wait(0.1) 
+                            task.wait(0.2) -- Otimizado para evitar gargalo de rede na sua máquina
                         end
                         
                         if _G.KillAtivo or finalizado then
