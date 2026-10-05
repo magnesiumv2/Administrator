@@ -126,23 +126,29 @@ MainTab:Button({
 
                             workspace.CurrentCamera.CameraSubject = thum
                             
-                            local FORCA_LINEAR = Vector3.new(28000, 28000, 28000)
-                            local FORCA_ANGULAR = Vector3.new(28000, 28000, 28000)
                             local ultimoCharacterAlvo = tchar
 
                             while _G.FlingAtivo and tchar:IsDescendantOf(workspace) and target.Parent == game:GetService("Players") and tchar == ultimoCharacterAlvo do
-                                if not tRoot then break end
+                                if not tRoot or not tchar:FindFirstChild("HumanoidRootPart") then break end
                                 
+                                -- Cria rotações caóticas na bola para quebrar o balanço de física do alvo
                                 Ball.CFrame = tRoot.CFrame * CFrame.Angles(
                                     math.rad(math.random(-180, 180)), 
                                     math.rad(math.random(-180, 180)), 
                                     math.rad(math.random(-180, 180))
                                 )
                                 
-                                Ball.AssemblyLinearVelocity = FORCA_LINEAR
-                                Ball.AssemblyAngularVelocity = FORCA_ANGULAR
+                                -- Multiplicador de velocidade agressiva alternando eixos positivos e negativos
+                                -- Isso impede que a física do Roblox estabilize o impacto
+                                local forcaAleatoriaX = math.random(1, 2) == 1 and 95000 or -95000
+                                local forcaAleatoriaY = math.random(1, 2) == 1 and 95000 or -95000
+                                local forcaAleatoriaZ = math.random(1, 2) == 1 and 95000 or -95000
                                 
-                                task.wait(0.02) 
+                                Ball.AssemblyLinearVelocity = Vector3.new(forcaAleatoriaX, forcaAleatoriaY, forcaAleatoriaZ)
+                                Ball.AssemblyAngularVelocity = Vector3.new(forcaAleatoriaX, forcaAleatoriaY, forcaAleatoriaZ)
+                                
+                                -- Frequência ultra rápida para garantir contato contínuo
+                                task.wait(0.01) 
                             end
                             
                             pcall(function()
