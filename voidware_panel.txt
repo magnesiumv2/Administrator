@@ -1,116 +1,3 @@
--- Coloque este script no seu executor (funciona localmente em segundo plano)
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local StarterGui = game:GetService("StarterGui")
-
--- Função auxiliar para mandar mensagens de aviso no seu chat local
-local function avisar(titulo, texto)
-    pcall(function()
-        StarterGui:SetCore("ChatMakeSystemMessage", {
-            Text = "[" .. titulo .. "] " .. texto,
-            Color = Color3.fromRGB(255, 170, 0),
-            Font = Enum.Font.SourceSansBold,
-            TextSize = 18
-        })
-    </pcall>
-end
-
--- ============================================================
--- MONITOR DO CHAT LOCAL
--- ============================================================
-LocalPlayer.Chatted:Connect(function(message)
-    local args = string.split(message, " ")
-    local command = args[1]:lower()
-    
-    if command == ";punish" then
-        -- Junta o restante dos argumentos caso o nome do jogador tenha espaços
-        local termoBusca = table.concat(args, " ", 2)
-        
-        if termoBusca == "" then
-            avisar("Aviso", "Por favor, digite o nome do alvo! Exemplo: ;punish nickname")
-            return
-        end
-        
-        -- Busca o jogador alvo pelo Nome ou DisplayName
-        local targetPlayer = nil
-        for _, player in pairs(Players:GetPlayers()) do
-            if string.find(string.lower(player.Name), string.lower(termoBusca)) or string.find(string.lower(player.DisplayName), string.lower(termoBusca)) then
-                targetPlayer = player
-                break
-            end
-        end
-        
-        if targetPlayer then
-            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
-            local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
-            
-            if trafficCones then
-                avisar("🔨 Punição Iniciada", "Teleportando props para " .. targetPlayer.Name .. ". Se ele sentar, a cadeira irá para o limbo.")
-
-                if _G.PunishAtivo then 
-                    _G.PunishAtivo = false 
-                    task.wait(0.1) 
-                end
-                _G.PunishAtivo = true
-
-                task.spawn(function()
-                    while _G.PunishAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-                        local character = targetPlayer.Character
-                        local targetHRP = character.HumanoidRootPart
-                        local humanoid = character:FindFirstChildOfClass("Humanoid")
-                        
-                        if humanoid and humanoid.Health <= 0 then
-                            break
-                        end
-                        
-                        local destinoPunishCFrame = targetHRP.CFrame
-                        
-                        if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
-                            destinoPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
-                            
-                            local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
-                            if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
-                                pcall(function()
-                                    if cadeiraFisica.Anchored then
-                                        cadeiraFisica.Anchored = false
-                                    end
-                                end)
-                            end
-                        end
-                        
-                        local props = trafficCones:GetChildren()
-                        
-                        if #props > 0 then
-                            for _, prop in pairs(props) do
-                                if not _G.PunishAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
-                                
-                                local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
-                                if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                    task.spawn(function()
-                                        pcall(function()
-                                            setCFrameRemote:InvokeServer(destinoPunishCFrame)
-                                        end)
-                                    end)
-                                end
-                            end
-                        end
-                        task.wait(0.1) 
-                    end
-                    
-                    if _G.PunishAtivo then
-                        avisar("✅ Punição Concluída", "Punição encerrada com sucesso.")
-                        _G.PunishAtivo = false
-                    end
-                end)
-            else
-                avisar("Erro", "Pasta 001_TrafficCones não encontrada no mapa.")
-            end
-        else
-            avisar("Erro", "Jogador '" .. termoBusca .. "' não foi encontrado.")
-        end
-    end
-end)
-
 -- 1. Carrega a versão mais recente e oficial da WindUI do repositório de releases
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
@@ -867,3 +754,140 @@ local LocalPlayer = Players.LocalPlayer
         end
     end
 })
+
+-- Execute este script corrigido no seu executor
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local StarterGui = game:GetService("StarterGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Função auxiliar corrigida para mandar mensagens de aviso no seu chat local
+local function avisar(titulo, texto)
+    pcall(function()
+        StarterGui:SetCore("ChatMakeSystemMessage", {
+            Text = "[" .. titulo .. "] " .. texto,
+            Color = Color3.fromRGB(255, 170, 0),
+            Font = Enum.Font.SourceSansBold,
+            TextSize = 18
+        })
+    end) -- Sintaxe corrigida aqui
+end
+
+-- ============================================================
+-- PROCESSADOR DO COMANDO
+-- ============================================================
+local function processarComando(message)
+    local args = string.split(message, " ")
+    local command = args[1]:lower()
+    
+    if command == ";punish" then
+        -- Junta o restante dos argumentos caso o nome do jogador tenha espaços
+        local termoBusca = table.concat(args, " ", 2)
+        
+        if termoBusca == "" then
+            avisar("Aviso", "Por favor, digite o nome do alvo! Exemplo: ;punish nickname")
+            return
+        end
+        
+        -- Busca o jogador alvo pelo Nome ou DisplayName
+        local targetPlayer = nil
+        for _, player in pairs(Players:GetPlayers()) do
+            if string.find(string.lower(player.Name), string.lower(termoBusca)) or string.find(string.lower(player.DisplayName), string.lower(termoBusca)) then
+                targetPlayer = player
+                break
+            end
+        end
+        
+        if targetPlayer then
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+            
+            if trafficCones then
+                avisar("🔨 Punição Iniciada", "Teleportando props para " .. targetPlayer.Name .. ". Se ele sentar, a cadeira irá para o limbo.")
+
+                if _G.PunishAtivo then 
+                    _G.PunishAtivo = false 
+                    task.wait(0.1) 
+                end
+                _G.PunishAtivo = true
+
+                task.spawn(function()
+                    while _G.PunishAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                        local character = targetPlayer.Character
+                        local targetHRP = character.HumanoidRootPart
+                        local humanoid = character:FindFirstChildOfClass("Humanoid")
+                        
+                        if humanoid and humanoid.Health <= 0 then
+                            break
+                        end
+                        
+                        local destinoPunishCFrame = targetHRP.CFrame
+                        
+                        if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                            destinoPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
+                            
+                            local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                            if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                                pcall(function()
+                                    if cadeiraFisica.Anchored then
+                                        cadeiraFisica.Anchored = false
+                                    end
+                                end)
+                            end
+                        end
+                        
+                        local props = trafficCones:GetChildren()
+                        
+                        if #props > 0 then
+                            for _, prop in pairs(props) do
+                                if not _G.PunishAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                
+                                local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                    task.spawn(function()
+                                        pcall(function()
+                                            setCFrameRemote:InvokeServer(destinoPunishCFrame)
+                                        end)
+                                    end)
+                                end
+                            end
+                        end
+                        task.wait(0.1) 
+                    end
+                    
+                    if _G.PunishAtivo then
+                        avisar("✅ Punição Concluída", "Punição encerrada com sucesso.")
+                        _G.PunishAtivo = false
+                    end
+                end)
+            else
+                avisar("Erro", "Pasta 001_TrafficCones não encontrada no mapa.")
+            end
+        else
+            avisar("Erro", "Jogador '" .. termoBusca .. "' não foi encontrado.")
+        end
+    end
+end
+
+-- ============================================================
+-- ESCUTA DE CHAT COMPATÍVEL COM TODOS OS EXECUTORES
+-- ============================================================
+
+-- Método 1: Tenta escutar os canais oficiais do chat de mensagens enviadas por você
+local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+local onMessageEvent = chatEvents and chatEvents:FindFirstChild("OnMessageDoneFiltering")
+
+if onMessageEvent and onMessageEvent:IsA("RemoteEvent") then
+    onMessageEvent.OnClientEvent:Connect(function(messageData)
+        if messageData and messageData.FromSpeaker == LocalPlayer.Name then
+            processarComando(messageData.Message)
+        end
+    end)
+else
+    -- Método 2: Fallback caso o jogo use o sistema de chat mais antigo ou modificado
+    LocalPlayer.Chatted:Connect(function(msg)
+        processarComando(msg)
+    end)
+end
+
+avisar("Sistema", "Script de punição carregado! Digite ;punish no chat.")
