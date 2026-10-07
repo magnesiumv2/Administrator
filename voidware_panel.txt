@@ -43,7 +43,6 @@ local DropdownAlvos = MainTab:Dropdown({
         else
             AlvoSelecionado = OpcaoSelecionada or ""
         end
-        print("Alvo atual definido para: " .. tostring(AlvoSelecionado))
     end
 })
 
