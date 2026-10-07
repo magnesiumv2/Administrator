@@ -2074,9 +2074,10 @@ local function exibirListaDeComandos()
         {Comando = ";kill [alvo]", Desc = "Gruda os cones na perna e limpa props ao matar no limbo."},
         {Comando = ";jail [alvo]", Desc = "Prende o jogador no cofre do banco ao sentar e limpa props."},
         {Comando = ";cmds", Desc = "Abre esta interface visual contendo a lista de comandos."}
-        {Comando = ";bring [alvo]", = Desc = "traz o jogador até você, depois limpa os Props."}
+        {Comando = ";bring [alvo]", Desc = "traz o jogador até você, depois limpa os Props."}
         {Comando = ";shutdown", Desc = "Pega e destrói a mangueira de incêndio para desligar o servidor e para travar."}
-        {Comando = ";jump [alvo]", = Desc = "pega os Props trampolim e teleporta na perna e limpa os itens."}
+        {Comando = ";jump [alvo]", Desc = "pega os Props trampolim e teleporta na perna e limpa os itens."}
+        {Comando = ";kick", Desc = "envia o jogador para coordenadas insanas e crasha ou desconecta."}
     }
 
     -- Cria visualmente cada linha da lista
