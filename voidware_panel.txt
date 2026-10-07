@@ -291,6 +291,150 @@ MainTab:Button({
     end
 })
 
+MainTab:Button({
+    Title = ";cmds",
+    Desc = "Abre a interface visual contendo a lista de comandos do painel",
+    Callback = function()
+        local CoreGui = game:GetService("CoreGui")
+        
+        -- Evita criar telas duplicadas se já estiver aberta
+        if CoreGui:FindFirstChild("Comandos_ListGUI") then 
+            CoreGui["Comandos_ListGUI"]:Destroy() 
+        end
+
+        -- Criação da ScreenGui principal presa à CoreGui (protegida contra reset)
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "Comandos_ListGUI"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = CoreGui
+
+        -- Frame Principal da Janela
+        local mainFrame = Instance.new("Frame")
+        mainFrame.Name = "MainFrame"
+        mainFrame.Size = UDim2.new(0, 360, 0, 280)
+        mainFrame.Position = UDim2.new(0.5, -180, 0.5, -140) -- Centralizado na tela
+        mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+        mainFrame.BorderSizePixel = 0
+        mainFrame.Active = true
+        mainFrame.Draggable = true -- Permite arrastar a janela livremente
+        mainFrame.Parent = screenGui
+
+        -- Cantos arredondados para o Frame Principal
+        local frameCorner = Instance.new("UICorner")
+        frameCorner.CornerRadius = UDim.new(0, 8)
+        frameCorner.Parent = mainFrame
+
+        -- Título da Janela
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Name = "Title"
+        titleLabel.Size = UDim2.new(1, -40, 0, 35)
+        titleLabel.Position = UDim2.new(0, 15, 0, 0)
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = "📜 Lista de Comandos Disponíveis"
+        titleLabel.TextColor3 = Color3.fromRGB(240, 240, 245)
+        titleLabel.TextSize = 14
+        titleLabel.Font = Enum.Font.SourceSansBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        titleLabel.Parent = mainFrame
+
+        -- Botão Fechar (✕)
+        local closeButton = Instance.new("TextButton")
+        closeButton.Name = "CloseButton"
+        closeButton.Size = UDim2.new(0, 30, 0, 30)
+        closeButton.Position = UDim2.new(1, -35, 0, 2)
+        closeButton.BackgroundTransparency = 1
+        closeButton.Text = "✕"
+        closeButton.TextColor3 = Color3.fromRGB(180, 180, 190)
+        closeButton.TextSize = 16
+        closeButton.Font = Enum.Font.SourceSansBold
+        closeButton.Parent = mainFrame
+
+        closeButton.MouseButton1Click:Connect(function()
+            screenGui:Destroy()
+        end)
+
+        -- Container com barra de rolagem (ScrollingFrame)
+        local scrollingFrame = Instance.new("ScrollingFrame")
+        scrollingFrame.Name = "CommandsContainer"
+        scrollingFrame.Size = UDim2.new(1, -20, 1, -50)
+        scrollingFrame.Position = UDim2.new(0, 10, 0, 40)
+        scrollingFrame.BackgroundTransparency = 1
+        scrollingFrame.BorderSizePixel = 0
+        scrollingFrame.ScrollBarThickness = 4
+        scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 110)
+        scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Ajustado dinamicamente
+        scrollingFrame.Parent = mainFrame
+
+        -- Alinhamento vertical automático dos itens da lista
+        local uiListLayout = Instance.new("UIListLayout")
+        uiListLayout.Padding = UDim.new(0, 5)
+        uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        uiListLayout.Parent = scrollingFrame
+
+        -- Atualiza o tamanho da rolagem automaticamente conforme a lista cresce
+        uiListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y + 10)
+        end)
+
+        -- Implementação da sua lista exata corrigida sintaticamente
+        local listaCmds = {
+            {Comando = ";punish [alvo]", Desc = "Teleporta os cones para a perna. Se sentar, vai pro limbo."},
+            {Comando = ";kill [alvo]", Desc = "Gruda os cones na perna e limpa props ao matar no limbo."},
+            {Comando = ";jail [alvo]", Desc = "Prende o jogador no cofre do banco ao sentar e limpa props."},
+            {Comando = ";cmds", Desc = "Abre esta interface visual contendo a lista de comandos."},
+            {Comando = ";bring [alvo]", Desc = "traz o jogador até você, depois limpa os Props."},
+            {Comando = ";shutdown", Desc = "Pega e destrói a mangueira de incêndio para desligar o servidor e para travar."},
+            {Comando = ";jump [alvo]", Desc = "pega os Props trampolim e teleporta na perna e limpa os itens."},
+            {Comando = ";kick", Desc = "envia o jogador para coordenadas insanas e crasha ou desconecta."}
+        }
+
+        -- Cria as linhas visuais dinamicamente na tela
+        for i, cmdInfo in ipairs(listaCmds) do
+            local itemFrame = Instance.new("Frame")
+            itemFrame.Name = "Cmd_" .. i
+            itemFrame.Size = UDim2.new(1, -5, 0, 42)
+            itemFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+            itemFrame.BorderSizePixel = 0
+            itemFrame.Parent = scrollingFrame
+
+            local itemCorner = Instance.new("UICorner")
+            itemCorner.CornerRadius = UDim.new(0, 5)
+            itemCorner.Parent = itemFrame
+
+            -- Texto do Comando (Cor Azulada de Destaque)
+            local cmdText = Instance.new("TextLabel")
+            cmdText.Size = UDim2.new(1, -10, 0, 20)
+            cmdText.Position = UDim2.new(0, 8, 0, 2)
+            cmdText.BackgroundTransparency = 1
+            cmdText.Text = cmdInfo.Comando
+            cmdText.TextColor3 = Color3.fromRGB(85, 170, 255)
+            cmdText.TextSize = 13
+            cmdText.Font = Enum.Font.SourceSansBold
+            cmdText.TextXAlignment = Enum.TextXAlignment.Left
+            cmdText.Parent = itemFrame
+
+            -- Texto da Descrição (Cor Cinza de Suporte)
+            local descText = Instance.new("TextLabel")
+            descText.Size = UDim2.new(1, -10, 0, 18)
+            descText.Position = UDim2.new(0, 8, 0, 20)
+            descText.BackgroundTransparency = 1
+            descText.Text = cmdInfo.Desc
+            descText.TextColor3 = Color3.fromRGB(170, 170, 180)
+            descText.TextSize = 12
+            descText.Font = Enum.Font.SourceSans
+            descText.TextXAlignment = Enum.TextXAlignment.Left
+            descText.Parent = itemFrame
+        end
+
+        -- Notificação visual da WindUI confirmando a geração da lista
+        WindUI:Notify({
+            Title = "📜 Menu Aberto", 
+            Content = "Lista de comandos gerada com sucesso.", 
+            Duration = 2
+        })
+    end
+})
+
 -- ============================================================
 -- 4. BOTÃO: ;punish
 -- ============================================================
