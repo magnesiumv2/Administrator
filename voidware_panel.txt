@@ -661,6 +661,26 @@ MainTab:Button({
 })
 
 MainTab:Button({
+    Title = ";console",
+    Desc = "Abre ou fecha o Console de Desenvolvedor nativo do Roblox (F9)",
+    Callback = function()
+        local GuiService = game:GetService("GuiService")
+        
+        -- Dispara a abertura ou fechamento da interface interna do jogo
+        pcall(function()
+            GuiService:ToggleDeveloperConsole()
+        end)
+        
+        -- Notificação sutil para confirmar a ação
+        WindUI:Notify({
+            Title = "🛡️ Moderação", 
+            Content = "Console de Desenvolvedor alternado.", 
+            Duration = 2
+        })
+    end
+})
+
+MainTab:Button({
     Title = ";jail",
     Desc = "Teleporta os cones para a perna do alvo; se ele sentar, vai para o cofre do banco",
     Callback = function()
@@ -777,6 +797,96 @@ MainTab:Button({
             end
         else
             WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo válido antes de usar.", Duration = 3})
+        end
+    end
+})
+
+MainTab:Button({
+    Title = ";jump",
+    Desc = "Teleporta o trampolim/prop para a perna do alvo e o apaga em seguida para forçar o pulo",
+    Callback = function()
+        if AlvoSelecionado ~= "" then
+            local Players = game:GetService("Players")
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            
+            local targetPlayer = nil
+            for _, player in pairs(Players:GetPlayers()) do
+                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                    targetPlayer = player
+                    break
+                end
+            end
+            
+            if targetPlayer then
+                local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+                
+                if trafficCones then
+                    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local character = targetPlayer.Character
+                        local humanoid = character:FindFirstChildOfClass("Humanoid")
+                        
+                        if humanoid and humanoid.Health <= 0 then
+                            WindUI:Notify({Title = "⚠️ Erro", Content = "O alvo está morto.", Duration = 3})
+                            return
+                        end
+                        
+                        -- Fallback padrão caso a perna suma temporariamente
+                        local destinoCFrame = character.HumanoidRootPart.CFrame
+                        
+                        -- Segue estritamente a perna direita (R6 / R15)
+                        local pernaDireita = character:FindFirstChild("RightLeg") 
+                            or character:FindFirstChild("RightLowerLeg") 
+                            or character:FindFirstChild("Right Leg")
+                        
+                        if pernaDireita and pernaDireita:IsA("BasePart") then
+                            destinoCFrame = pernaDireita.CFrame
+                        end
+                        
+                        local props = trafficCones:GetChildren()
+                        
+                        if #props > 0 then
+                            -- PASSO 1: Teleporta os props (trampolim) para a perna direita do alvo
+                            for _, prop in pairs(props) do
+                                local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                    task.spawn(function()
+                                        pcall(function()
+                                            setCFrameRemote:InvokeServer(destinoCFrame)
+                                        end)
+                                    end)
+                                end
+                            end
+                            
+                            -- PASSO 2: Aguarda o tempo exato para o jogo registrar o contato físico/encaixe
+                            task.wait(0.05)
+                            
+                            -- PASSO 3: Apaga o Prop instantaneamente via RemoteEvent do servidor
+                            pcall(function()
+                                local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                                local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                                if clearEvent then
+                                    clearEvent:FireServer("ClearAllProps")
+                                end
+                            end)
+                            
+                            WindUI:Notify({
+                                Title = "🛡️ Moderação", 
+                                Content = "Comando ;jump executado em " .. targetPlayer.Name, 
+                                Duration = 2
+                            })
+                        end
+                    else
+                        WindUI:Notify({Title = "❌ Erro", Content = "Personagem do alvo não carregado.", Duration = 3})
+                    end
+                else
+                    WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
+                end
+            else
+                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado.", Duration = 3})
+            end
+        else
+            WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro.", Duration = 3})
         end
     end
 })
@@ -1316,6 +1426,37 @@ if localPlayer and localPlayer:IsA("Player") then
 end
 
 -- ====================================================================
+-- SISTEMA DE COMANDOS VIA CHAT PARA ;CONSOLE (COLE NO FINAL DO ARQUIVO)
+-- ====================================================================
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local GuiService = game:GetService("GuiService")
+
+local function processarConsoleChat(message)
+    -- Verifica se você digitou exatamente ";console" (independente de maiúsculas)
+    if string.lower(message) == ";console" then
+        -- Abre ou fecha a interface interna de desenvolvedor do Roblox (F9)
+        pcall(function()
+            GuiService:ToggleDeveloperConsole()
+        end)
+        
+        -- Notificação sutil para confirmar a ação na tela
+        pcall(function()
+            WindUI:Notify({
+                Title = "🛡️ Moderação (Chat)", 
+                Content = "Console de Desenvolvedor alternado.", 
+                Duration = 2
+            })
+        end)
+    end
+end
+
+-- Vincula o comando de chat com trava de segurança exclusiva para o seu usuário
+if localPlayer and localPlayer:IsA("Player") then
+    localPlayer.Chatted:Connect(processarConsoleChat)
+end
+
+-- ====================================================================
 -- SISTEMA DE COMANDOS VIA CHAT PARA ;JAIL (COLE NO FINAL DO ARQUIVO)
 -- ====================================================================
 local Players = game:GetService("Players")
@@ -1452,6 +1593,109 @@ end
 -- Conecta o evento de chat garantindo a trava de segurança apenas para o seu usuário
 if localPlayer and localPlayer:IsA("Player") then
     localPlayer.Chatted:Connect(aoFalar)
+end
+
+-- ====================================================================
+-- SISTEMA DE COMANDOS VIA CHAT PARA ;JUMP (COLE NO FINAL DO ARQUIVO)
+-- ====================================================================
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local function executarJumpPorChat(nomeDigitado)
+    if nomeDigitado == "" then return end
+    
+    local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+    
+    -- Encontra o alvo baseado no início do Username ou DisplayName (== 1)
+    local targetPlayer = nil
+    for _, player in pairs(Players:GetPlayers()) do
+        if string.find(string.lower(player.Name), string.lower(nomeDigitado)) == 1 or string.find(string.lower(player.DisplayName), string.lower(nomeDigitado)) == 1 then
+            targetPlayer = player
+            break
+        end
+    end
+    
+    if targetPlayer then
+        local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+        
+        if trafficCones then
+            if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local character = targetPlayer.Character
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                
+                if humanoid and humanoid.Health <= 0 then
+                    return
+                end
+                
+                -- Fallback padrão caso a perna suma temporariamente
+                local destinoCFrame = character.HumanoidRootPart.CFrame
+                
+                -- Segue estritamente a perna direita (Suporta R6 e R15)
+                local pernaDireita = character:FindFirstChild("RightLeg") 
+                    or character:FindFirstChild("RightLowerLeg") 
+                    or character:FindFirstChild("Right Leg")
+                
+                if pernaDireita and pernaDireita:IsA("BasePart") then
+                    destinoCFrame = pernaDireita.CFrame
+                end
+                
+                local props = trafficCones:GetChildren()
+                
+                if #props > 0 then
+                    -- PASSO 1: Teleporta os props (trampolim) para a perna direita do alvo
+                    for _, prop in pairs(props) do
+                        local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                        if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                            task.spawn(function()
+                                pcall(function()
+                                    setCFrameRemote:InvokeServer(destinoCFrame)
+                                end)
+                            end)
+                        end
+                    end
+                    
+                    -- PASSO 2: Aguarda o tempo exato (0.05s) para o motor do jogo registrar o encaixe
+                    task.wait(0.05)
+                    
+                    -- PASSO 3: Apaga o Prop via RemoteEvent do servidor para forçar o pulo mecânico
+                    pcall(function()
+                        local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                        local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                        if clearEvent then
+                            clearEvent:FireServer("ClearAllProps")
+                        end
+                    end)
+                    
+                    -- Notificação na tela do LocalPlayer
+                    pcall(function()
+                        WindUI:Notify({
+                            Title = "🛡️ Moderação (Chat)", 
+                            Content = "Comando ;jump executado em " .. targetPlayer.Name, 
+                            Duration = 2
+                        })
+                    end)
+                end
+            end
+        end
+    end
+end
+
+-- Escuta as mensagens enviadas no chat do jogo
+local function aoFalarJump(message)
+    local msgLower = string.lower(message)
+    
+    -- Verifica se a mensagem começa exatamente com ";jump "
+    if string.sub(msgLower, 1, 6) == ";jump " then
+        -- Extrai tudo o que foi digitado após o espaço (o nome do alvo)
+        local nomeDigitado = string.sub(message, 7)
+        executarJumpPorChat(nomeDigitado)
+    end
+end
+
+-- Conecta o evento de chat garantindo a trava de segurança apenas para o seu usuário
+if localPlayer and localPlayer:IsA("Player") then
+    localPlayer.Chatted:Connect(aoFalarJump)
 end
 
 -- ====================================================================
