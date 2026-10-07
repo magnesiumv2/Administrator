@@ -946,6 +946,100 @@ MainTab:Button({
 })
 
 MainTab:Button({
+    Title = ";cmdbar",
+    Desc = "Abre uma barra de comandos compacta na tela para digitação rápida",
+    Callback = function()
+        local CoreGui = game:GetService("CoreGui")
+        local Players = game:GetService("Players")
+        local localPlayer = Players.LocalPlayer
+        
+        -- Evita duplicar a barra se ela já estiver aberta
+        if CoreGui:FindFirstChild("CmdBar_GUI") then 
+            CoreGui["CmdBar_GUI"]:Destroy() 
+            return
+        end
+
+        -- Criação da ScreenGui principal
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "CmdBar_GUI"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = CoreGui
+
+        -- Frame de Fundo da Barra
+        local barFrame = Instance.new("Frame")
+        barFrame.Name = "BarFrame"
+        barFrame.Size = UDim2.new(0, 400, 0, 36)
+        -- Posiciona na parte inferior central da tela
+        barFrame.Position = UDim2.new(0.5, -200, 1, -60) 
+        barFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+        barFrame.BorderSizePixel = 0
+        barFrame.Active = true
+        barFrame.Draggable = true -- Permite arrastar a barra se quiser mudar de lugar
+        barFrame.Parent = screenGui
+
+        -- Cantos arredondados
+        local barCorner = Instance.new("UICorner")
+        barCorner.CornerRadius = UDim.new(0, 6)
+        barCorner.Parent = barFrame
+
+        -- Borda sutil de destaque azul
+        local barStroke = Instance.new("UIStroke")
+        barStroke.Color = Color3.fromRGB(85, 170, 255)
+        barStroke.Thickness = 1.5
+        barStroke.Parent = barFrame
+
+        -- Caixa de Entrada de Texto (Onde você digita)
+        local textBox = Instance.new("TextBox")
+        textBox.Name = "CmdInput"
+        textBox.Size = UDim2.new(1, -20, 1, 0)
+        textBox.Position = UDim2.new(0, 10, 0, 0)
+        textBox.BackgroundTransparency = 1
+        textBox.Text = ""
+        textBox.PlaceholderText = "Digite um comando aqui... (Ex: ;punish player)"
+        textBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 130)
+        textBox.TextColor3 = Color3.fromRGB(245, 245, 250)
+        textBox.TextSize = 14
+        textBox.Font = Enum.Font.SourceSansBold
+        textBox.TextXAlignment = Enum.TextXAlignment.Left
+        textBox.ClearTextOnFocus = false
+        textBox.Parent = barFrame
+
+        -- Foca o teclado automaticamente na barra assim que ela abre
+        textBox:CaptureFocus()
+
+        -- Quando você aperta ENTER na barra de comandos:
+        textBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed and textBox.Text ~= "" then
+                local comandoDigitado = textBox.Text
+                
+                -- Executa o comando localmente simulando o envio
+                -- Isso aciona o mesmo interpretador de chat que já criamos
+                task.spawn(function()
+                    if localPlayer and localPlayer:IsA("Player") then
+                        -- Dispara o evento interno simulando que você falou no chat
+                        -- Nota: Isso roda apenas para você, mantendo a segurança!
+                        localPlayer:Chat(comandoDigitado) 
+                    end
+                end)
+
+                -- Notificação visual rápida confirmando o envio
+                WindUI:Notify({
+                    Title = "⌨️ CmdBar", 
+                    Content = "Comando enviado: " .. comandoDigitado, 
+                    Duration = 2
+                })
+
+                -- Fecha a barra automaticamente após executar (comportamento clássico HD Admin)
+                screenGui:Destroy()
+            elseif not enterPressed then
+                -- Se você apenas clicou fora sem apertar ENTER, fecha a barra
+                screenGui:Destroy()
+            end
+        end)
+    end
+})
+
+MainTab:Button({
     Title = ";jump",
     Desc = "Teleporta o trampolim/prop para a perna do alvo e o apaga em seguida para forçar o pulo",
     Callback = function()
