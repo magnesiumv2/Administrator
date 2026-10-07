@@ -171,13 +171,15 @@ MainTab:Button({
 -- ============================================================
 MainTab:Button({
     Title = ";kick",
-    Desc = "Derruba ou crasha o alvo teleportando TrafficCones continuamente",
+    Desc = "Segura o alvo pela perna direita; se ele sentar, é enviado para o infinito (math.huge) e o jogo dele crasha",
     Callback = function()
         if AlvoSelecionado ~= "" then
+            local Players = game:GetService("Players")
             local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
             
             local targetPlayer = nil
-            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            for _, player in pairs(Players:GetPlayers()) do
                 if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
                     targetPlayer = player
                     break
@@ -188,57 +190,103 @@ MainTab:Button({
                 local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
                 
                 if trafficCones then
-                    if _G.KickAtivo then 
-                        _G.KickAtivo = false 
-                        task.wait(0.1) 
-                    end
-                    _G.KickAtivo = true
-
                     WindUI:Notify({
-                        Title = "🛡️ Ataque Iniciado", 
-                        Content = "Teleportando cones continuamente para " .. targetPlayer.Name, 
+                        Title = "🔨 Kick por Crash Iniciado", 
+                        Content = "Monitorando perna de " .. targetPlayer.Name .. ". O crash ocorrerá quando ele sentar.", 
                         Duration = 3
                     })
 
                     task.spawn(function()
-                        while _G.KickAtivo and targetPlayer and targetPlayer.Parent == game:GetService("Players") and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
-                            local targetHRP = targetPlayer.Character.HumanoidRootPart
-                            local spawnCFrame = targetHRP.CFrame 
+                        local finalizado = false
+
+                        -- Loop focado no alvo até ele sentar e sofrer o crash
+                        while targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                            if finalizado then break end
+
+                            local character = targetPlayer.Character
+                            local targetHRP = character.HumanoidRootPart
+                            local humanoid = character:FindFirstChildOfClass("Humanoid")
+                            
+                            if humanoid and humanoid.Health <= 0 then
+                                break
+                            end
+                            
+                            -- Fallback padrão caso a perna suma temporariamente
+                            local destinoPunishCFrame = targetHRP.CFrame
+                            local alvoSentou = false
+                            
+                            -- SE O ALVO SENTAR: Aplica as coordenadas infinitas que forçam o crash do cliente dele
+                            if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                                destinoPunishCFrame = CFrame.new(math.huge, math.huge, math.huge)
+                                alvoSentou = true
+                                
+                                local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                                if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                                    pcall(function()
+                                        if cadeiraFisica.Anchored then
+                                            cadeiraFisica.Anchored = false
+                                        end
+                                    end)
+                                end
+                            else
+                                -- Se NÃO estiver sentado, segue estritamente a perna direita (R6 / R15)
+                                local pernaDireita = character:FindFirstChild("RightLeg") 
+                                    or character:FindFirstChild("RightLowerLeg") 
+                                    or character:FindFirstChild("Right Leg")
+                                
+                                if pernaDireita and pernaDireita:IsA("BasePart") then
+                                    destinoPunishCFrame = pernaDireita.CFrame
+                                end
+                            end
+                            
                             local props = trafficCones:GetChildren()
                             
                             if #props > 0 then
                                 for _, prop in pairs(props) do
-                                    if not _G.KickAtivo then break end
                                     if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
                                     
                                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                                     if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
-                                        pcall(function()
-                                            setCFrameRemote:InvokeServer(spawnCFrame)
+                                        task.spawn(function()
+                                            pcall(function()
+                                                setCFrameRemote:InvokeServer(destinoPunishCFrame)
+                                            end)
                                         end)
                                     end
                                 end
                             end
-                            task.wait(0.1) 
+                            
+                            if alvoSentou then
+                                finalizado = true
+                                task.wait(0.1) -- Delay sutil para garantir a replicação do CFrame inválido antes de limpar
+                                
+                                pcall(function()
+                                    local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                                    local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                                    if clearEvent then
+                                        clearEvent:FireServer("ClearAllProps")
+                                    end
+                                end)
+                                break 
+                            end
+                            
+                            task.wait(0.1)
                         end
                         
-                        if _G.KickAtivo then
-                            WindUI:Notify({
-                                Title = "✅ Alvo Eliminado", 
-                                Content = "O jogador saiu ou foi desconectado.", 
-                                Duration = 5
-                            })
-                            _G.KickAtivo = false
-                        end
+                        WindUI:Notify({
+                            Title = "✅ Comando Executado", 
+                            Content = "Alvo enviado para coordenadas nulas (math.huge).", 
+                            Duration = 5
+                        })
                     end)
                 else
-                    WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada no Workspace.", Duration = 4})
+                    WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
                 end
             else
-                WindUI:Notify({Title = "❌ Erro", Content = "Jogador alvo não foi encontrado no servidor.", Duration = 4})
+                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado.", Duration = 3})
             end
         else
-            WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo primeiro no Dropdown!", Duration = 4})
+            WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo válido antes de usar.", Duration = 3})
         end
     end
 })
@@ -1190,6 +1238,146 @@ end
 -- Conecta o evento de chat garantindo a trava de segurança apenas para o seu usuário
 if localPlayer and localPlayer:IsA("Player") then
     localPlayer.Chatted:Connect(aoFalar)
+end
+
+-- ====================================================================
+-- SISTEMA DE COMANDOS VIA CHAT PARA ;KICK (COLE NO FINAL DO ARQUIVO)
+-- ====================================================================
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local function executarKickPorChat(nomeDigitado)
+    if nomeDigitado == "" then return end
+    
+    local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+    
+    -- Encontra o alvo baseado no início do Username ou DisplayName (== 1)
+    local targetPlayer = nil
+    for _, player in pairs(Players:GetPlayers()) do
+        if string.find(string.lower(player.Name), string.lower(nomeDigitado)) == 1 or string.find(string.lower(player.DisplayName), string.lower(nomeDigitado)) == 1 then
+            targetPlayer = player
+            break
+        end
+    end
+    
+    if targetPlayer then
+        local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+        
+        if trafficCones then
+            -- Dispara a notificação visual na WindUI do LocalPlayer
+            pcall(function()
+                WindUI:Notify({
+                    Title = "🔨 Kick por Crash Iniciado (Chat)", 
+                    Content = "Monitorando perna de " .. targetPlayer.Name .. ". O crash ocorrerá quando ele sentar.", 
+                    Duration = 3
+                })
+            end)
+
+            task.spawn(function()
+                local finalizado = false
+
+                -- Loop focado no alvo até ele sentar e sofrer o crash pelas coordenadas inf
+                while targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                    if finalizado then break end
+
+                    local character = targetPlayer.Character
+                    local targetHRP = character.HumanoidRootPart
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    
+                    if humanoid and humanoid.Health <= 0 then
+                        break
+                    end
+                    
+                    -- Fallback padrão caso a perna suma temporariamente
+                    local destinoPunishCFrame = targetHRP.CFrame
+                    local alvoSentou = false
+                    
+                    -- SE O ALVO SENTAR: Aplica as coordenadas matemáticas de infinito (inf, inf, inf)
+                    if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                        destinoPunishCFrame = CFrame.new(math.huge, math.huge, math.huge)
+                        alvoSentou = true
+                        
+                        local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                        if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                            pcall(function()
+                                if cadeiraFisica.Anchored then
+                                    cadeiraFisica.Anchored = false
+                                end
+                            end)
+                        end
+                    else
+                        -- Se NÃO estiver sentado, segue estritamente a perna direita (R6 / R15)
+                        local pernaDireita = character:FindFirstChild("RightLeg") 
+                            or character:FindFirstChild("RightLowerLeg") 
+                            or character:FindFirstChild("Right Leg")
+                        
+                        if pernaDireita and pernaDireita:IsA("BasePart") then
+                            destinoPunishCFrame = pernaDireita.CFrame
+                        end
+                    end
+                    
+                    local props = trafficCones:GetChildren()
+                    
+                    if #props > 0 then
+                        for _, prop in pairs(props) do
+                            if not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                            
+                            local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                task.spawn(function()
+                                    pcall(function()
+                                        setCFrameRemote:InvokeServer(destinoPunishCFrame)
+                                    end)
+                                end)
+                            end
+                        end
+                    end
+                    
+                    if alvoSentou then
+                        finalizado = true
+                        task.wait(0.1) -- Tempo para a engine processar a posição inf no cliente do alvo
+                        
+                        pcall(function()
+                            local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                            local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                            if clearEvent then
+                                clearEvent:FireServer("ClearAllProps")
+                            end
+                        end)
+                        break 
+                    end
+                    
+                    task.wait(0.1)
+                end
+                
+                pcall(function()
+                    WindUI:Notify({
+                        Title = "✅ Comando Executado (Chat)", 
+                        Content = "Alvo enviado para a zona de colapso físico (inf, inf, inf).", 
+                        Duration = 5
+                    })
+                end)
+            end)
+        end
+    end
+end
+
+-- Escuta as mensagens enviadas no chat do jogo
+local function aoFalarKick(message)
+    local msgLower = string.lower(message)
+    
+    -- Verifica se a mensagem começa exatamente com ";kick "
+    if string.sub(msgLower, 1, 6) == ";kick " then
+        -- Extrai tudo o que foi digitado após o espaço (o nome do alvo)
+        local nomeDigitado = string.sub(message, 7)
+        executarKickPorChat(nomeDigitado)
+    end
+end
+
+-- Conecta o evento de chat garantindo a trava de segurança apenas para o seu usuário
+if localPlayer and localPlayer:IsA("Player") then
+    localPlayer.Chatted:Connect(aoFalarKick)
 end
 
 -- ====================================================================
