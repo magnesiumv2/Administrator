@@ -806,21 +806,29 @@ MainTab:Button({
 
 MainTab:Button({
     Title = ";console",
-    Desc = "Abre ou fecha o Console de Desenvolvedor nativo do Roblox (F9)",
+    Desc = "Abre instantaneamente o Console do Desenvolvedor oficial do Roblox (F9)",
     Callback = function()
-        local GuiService = game:GetService("GuiService")
+        local StarterGui = game:GetService("StarterGui")
         
-        -- Dispara a abertura ou fechamento da interface interna do jogo
-        pcall(function()
-            GuiService:ToggleDeveloperConsole()
+        -- O pcall previne erros caso a interface do CoreGui ainda esteja carregando no servidor
+        local sucesso, erro = pcall(function()
+            StarterGui:SetCore("DevConsoleVisible", true)
         end)
         
-        -- Notificação sutil para confirmar a ação
-        WindUI:Notify({
-            Title = "🛡️ Moderação", 
-            Content = "Console de Desenvolvedor alternado.", 
-            Duration = 2
-        })
+        if sucesso then
+            WindUI:Notify({
+                Title = "🖥️ Console Ativado", 
+                Content = "Console do Desenvolvedor aberto com sucesso.", 
+                Duration = 2
+            })
+        else
+            warn("Falha ao abrir o Console nativo: " .. tostring(erro))
+            WindUI:Notify({
+                Title = "⚠️ Erro", 
+                Content = "Não foi possível abrir o console automaticamente.", 
+                Duration = 3
+            })
+        end
     end
 })
 
@@ -1569,36 +1577,19 @@ if localPlayer and localPlayer:IsA("Player") then
     localPlayer.Chatted:Connect(aoFalarShutdown)
 end
 
--- ====================================================================
--- SISTEMA DE COMANDOS VIA CHAT PARA ;CONSOLE (COLE NO FINAL DO ARQUIVO)
--- ====================================================================
-local Players = game:GetService("Players")
-local localPlayer = Players.LocalPlayer
-local GuiService = game:GetService("GuiService")
-
-local function processarConsoleChat(message)
-    -- Verifica se você digitou exatamente ";console" (independente de maiúsculas)
-    if string.lower(message) == ";console" then
-        -- Abre ou fecha a interface interna de desenvolvedor do Roblox (F9)
+game.Players.LocalPlayer.Chatted:Connect(function(mensagem)
+    if string.lower(mensagem) == ";console" then
         pcall(function()
-            GuiService:ToggleDeveloperConsole()
+            game.StarterGui:SetCore("DevConsoleVisible", true)
         end)
         
-        -- Notificação sutil para confirmar a ação na tela
-        pcall(function()
-            WindUI:Notify({
-                Title = "🛡️ Moderação (Chat)", 
-                Content = "Console de Desenvolvedor alternado.", 
-                Duration = 2
-            })
-        end)
+        WindUI:Notify({
+            Title = "🖥️ PromptR Admin", 
+            Content = "Console do Desenvolvedor ativado via chat.", 
+            Duration = 2
+        })
     end
-end
-
--- Vincula o comando de chat com trava de segurança exclusiva para o seu usuário
-if localPlayer and localPlayer:IsA("Player") then
-    localPlayer.Chatted:Connect(processarConsoleChat)
-end
+end)
 
 -- ====================================================================
 -- SISTEMA DE COMANDOS VIA CHAT PARA ;JAIL (COLE NO FINAL DO ARQUIVO)
