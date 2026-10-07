@@ -279,7 +279,7 @@ MainTab:Button({
                     _G.PunishAtivo = true
 
                     task.spawn(function()
-                        while _G.PunishAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                        while _G.PunishAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("RightLeg") do
                             local character = targetPlayer.Character
                             local targetHRP = character.HumanoidRootPart
                             local humanoid = character:FindFirstChildOfClass("Humanoid")
