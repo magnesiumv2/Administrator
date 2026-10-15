@@ -1782,7 +1782,7 @@ local function aoFalarBring(message)
     local msgLower = string.lower(message)
     
     -- Verifica se a mensagem começa exatamente com ":bring "
-    if string.sub(msgLower, 1, 7) == ";bring " then
+    if string.sub(msgLower, 1, 7) == ":bring " then
         -- Extrai tudo o que foi digitado após o espaço (o nome do alvo)
         local nomeDigitado = string.sub(message, 8)
         executarBringPorChat(nomeDigitado)
