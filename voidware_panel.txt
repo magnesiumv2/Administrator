@@ -435,6 +435,119 @@ MainTab:Button({
     end
 })
 
+-- ============================================================
+-- COMANDO REATIVO: :tp via Botão (Puxa o Alvo até Você)
+-- ============================================================
+MainTab:Button({
+    Title = ":tp",
+    Desc = "Move o Alvo selecionado na TextBox até a sua posição atual usando o sistema de cones",
+    Callback = function()
+        local targetPlayer = obterJogadorAlvo()
+        local localPlayer = game:GetService("Players").LocalPlayer
+        
+        if targetPlayer and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+            
+            if trafficCones then
+                WindUI:Notify({
+                    Title = "🔨 Prop-TP Iniciado", 
+                    Content = "Puxando " .. targetPlayer.Name .. " até a sua posição atual.", 
+                    Duration = 3
+                })
+
+                -- Controla o loop usando a variável dedicada exclusivamente a este comando
+                _G.TpPropsAtivo = false 
+                task.wait(0.05)
+                _G.TpPropsAtivo = true
+
+                task.spawn(function()
+                    local runService = game:GetService("RunService")
+                    local finalizado = false
+
+                    while _G.TpPropsAtivo and targetPlayer and targetPlayer.Parent == game:GetService("Players") do
+                        if finalizado then break end
+
+                        local charOrigem = targetPlayer.Character
+                        if not charOrigem then 
+                            runService.Heartbeat:Wait()
+                            continue 
+                        end
+
+                        local hrpOrigem = charOrigem:FindFirstChild("HumanoidRootPart")
+                        local humanoidOrigem = charOrigem:FindFirstChildOfClass("Humanoid")
+
+                        -- Interrompe se o alvo morrer
+                        if humanoidOrigem and humanoidOrigem.Health <= 0 then 
+                            break 
+                        end
+
+                        -- Coordenada inicial (segue a perna enquanto ele estiver de pé)
+                        local destinoCFrame = hrpOrigem and hrpOrigem.CFrame or CFrame.new()
+                        local chegouNoDestino = false
+
+                        -- SE O JOGADOR DE ORIGEM SENTAR: Teleporta o assento até a sua frente
+                        if humanoidOrigem and (humanoidOrigem.Sit or charOrigem:FindFirstChild("Seat") or charOrigem:FindFirstChild("VehicleSeat") or humanoidOrigem.SeatPart) then
+                            if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                                destinoCFrame = localPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
+                            end
+                            chegouNoDestino = true
+                            
+                            local cadeiraFisica = humanoidOrigem.SeatPart or charOrigem:FindFirstChild("Seat") or charOrigem:FindFirstChild("VehicleSeat")
+                            if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                                pcall(function() cadeiraFisica.Anchored = false end)
+                            end
+                        else
+                            -- Persegue a perna do alvo enquanto ele estiver de pé para forçar o encaixe
+                            local pernaDireita = charOrigem:FindFirstChild("RightLeg") or charOrigem:FindFirstChild("RightLowerLeg") or charOrigem:FindFirstChild("Right Leg")
+                            if pernaDireita and pernaDireita:IsA("BasePart") then 
+                                destinoCFrame = pernaDireita.CFrame 
+                            end
+                        end
+
+                        -- Move os objetos disparando threads separadas
+                        local props = trafficCones:GetChildren()
+                        if #props > 0 then
+                            for _, prop in ipairs(props) do
+                                if not _G.TpPropsAtivo then break end
+                                local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                    task.spawn(function() 
+                                        pcall(function() setCFrameRemote:InvokeServer(destinoCFrame) end) 
+                                    end)
+                                end
+                            end
+                        end
+
+                        -- Limpa as ferramentas assim que o teletransporte é concluído
+                        if chegouNoDestino then
+                            finalizado = true
+                            task.wait(0.1)
+                            
+                            pcall(function()
+                                local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                                local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                                if clearEvent then 
+                                    clearEvent:FireServer("ClearAllProps") 
+                                end
+                            end)
+                            break
+                        end
+
+                        runService.Heartbeat:Wait()
+                    end
+                    _G.TpPropsAtivo = false
+                end)
+            else
+                WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
+            end
+        else
+            WindUI:Notify({Title = "⚠️ Aviso", Content = "Nenhum alvo válido selecionado na TextBox.", Duration = 3})
+        end
+    end
+})
+
 MainTab:Button({
     Title = ":bring",
     Desc = "Teleporta os cones para a perna; se sentar, traz a cadeira até você, limpa os props e para",
@@ -1779,6 +1892,92 @@ end
 if localPlayer and localPlayer:IsA("Player") then
     localPlayer.Chatted:Connect(aoFalarBring)
 end
+
+-- ============================================================
+-- COMANDO DE CHAT: :tp [Alvo1] [Alvo2]
+-- ============================================================
+-- Insira este bloco dentro da sua estrutura condicional de comandos de chat (if/elseif)
+elseif cmd == ":tp" and argumentos[2] and argumentos[3] then
+    local jogadorOrigem = localizarJogador(argumentos[2])
+    local jogadorDestino = localizarJogador(argumentos[3])
+    
+    if jogadorOrigem and jogadorDestino then
+        -- Reseta qualquer instância ativa do teletransporte antes de iniciar
+        _G.TpPropsAtivo = false 
+        task.wait(0.05)
+        _G.TpPropsAtivo = true
+
+        task.spawn(function()
+            local finalizado = false
+            while _G.TpPropsAtivo and jogadorOrigem and jogadorOrigem.Parent == Players and jogadorDestino and jogadorDestino.Parent == Players do
+                if finalizado then break end
+
+                local charOrigem = jogadorOrigem.Character
+                local charDestino = jogadorDestino.Character
+                
+                if not charOrigem or not charDestino then 
+                    game:GetService("RunService").Heartbeat:Wait() 
+                    continue 
+                end
+
+                local humanoidOrigem = charOrigem:FindFirstChildOfClass("Humanoid")
+                local hrpOrigem = charOrigem:FindFirstChild("HumanoidRootPart")
+                local hrpDestino = charDestino:FindFirstChild("HumanoidRootPart")
+
+                if humanoidOrigem and humanoidOrigem.Health <= 0 then 
+                    break 
+                end
+
+                local destinoCFrame = hrpOrigem and hrpOrigem.CFrame or CFrame.new()
+                local chegouNoDestino = false
+
+                -- SE O ALVO 1 SENTAR: Move a estrutura até o Alvo 2
+                if humanoidOrigem and (humanoidOrigem.Sit or charOrigem:FindFirstChild("Seat") or charOrigem:FindFirstChild("VehicleSeat") or humanoidOrigem.SeatPart) then
+                    if hrpDestino then 
+                        destinoCFrame = hrpDestino.CFrame * CFrame.new(0, 0, -3) 
+                    end
+                    chegouNoDestino = true
+                    
+                    local cadeiraFisica = humanoidOrigem.SeatPart or charOrigem:FindFirstChild("Seat") or charOrigem:FindFirstChild("VehicleSeat")
+                    if cadeiraFisica and cadeiraFisica:IsA("BasePart") then 
+                        pcall(function() cadeiraFisica.Anchored = false end) 
+                    end
+                else
+                    -- Força o travamento seguindo a perna do alvo de origem
+                    local pernaDireita = charOrigem:FindFirstChild("RightLeg") or charOrigem:FindFirstChild("RightLowerLeg") or charOrigem:FindFirstChild("Right Leg")
+                    if pernaDireita and pernaDireita:IsA("BasePart") then 
+                        destinoCFrame = pernaDireita.CFrame 
+                    end
+                end
+
+                -- Dispara a replicação assíncrona dos cones de tráfego
+                for _, prop in ipairs(trafficCones:GetChildren()) do
+                    local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                    if setCFrameRemote then 
+                        task.spawn(function() pcall(function() setCFrameRemote:InvokeServer(destinoCFrame) end) end) 
+                    end
+                end
+
+                -- Finaliza o ciclo limpando os objetos do servidor
+                if chegouNoDestino then
+                    finalizado = true 
+                    task.wait(0.1)
+                    
+                    pcall(function()
+                        local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                        local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                        if clearEvent then 
+                            clearEvent:FireServer("ClearAllProps") 
+                        end
+                    end)
+                    break
+                end
+
+                game:GetService("RunService").Heartbeat:Wait()
+            end
+            _G.TpPropsAtivo = false
+        end)
+    end
 
 -- ====================================================================
 -- SISTEMA DE INTERFACE VISUAL PARA ;CMDS (COLE NO FINAL DO ARQUIVO)
