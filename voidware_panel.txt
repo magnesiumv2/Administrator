@@ -1894,15 +1894,13 @@ if localPlayer and localPlayer:IsA("Player") then
 end
 
 -- ============================================================
--- COMANDO DE CHAT: :tp [Alvo1] [Alvo2]
+-- COMANDO DE CHAT: :tp [Alvo1] [Alvo2] (Sintaxe Corrigida)
 -- ============================================================
--- Insira este bloco dentro da sua estrutura condicional de comandos de chat (if/elseif)
-elseif cmd == ":tp" and argumentos[2] and argumentos[3] then
+if cmd == ":tp" and argumentos[2] and argumentos[3] then
     local jogadorOrigem = localizarJogador(argumentos[2])
     local jogadorDestino = localizarJogador(argumentos[3])
     
     if jogadorOrigem and jogadorDestino then
-        -- Reseta qualquer instância ativa do teletransporte antes de iniciar
         _G.TpPropsAtivo = false 
         task.wait(0.05)
         _G.TpPropsAtivo = true
@@ -1931,7 +1929,6 @@ elseif cmd == ":tp" and argumentos[2] and argumentos[3] then
                 local destinoCFrame = hrpOrigem and hrpOrigem.CFrame or CFrame.new()
                 local chegouNoDestino = false
 
-                -- SE O ALVO 1 SENTAR: Move a estrutura até o Alvo 2
                 if humanoidOrigem and (humanoidOrigem.Sit or charOrigem:FindFirstChild("Seat") or charOrigem:FindFirstChild("VehicleSeat") or humanoidOrigem.SeatPart) then
                     if hrpDestino then 
                         destinoCFrame = hrpDestino.CFrame * CFrame.new(0, 0, -3) 
@@ -1943,14 +1940,12 @@ elseif cmd == ":tp" and argumentos[2] and argumentos[3] then
                         pcall(function() cadeiraFisica.Anchored = false end) 
                     end
                 else
-                    -- Força o travamento seguindo a perna do alvo de origem
                     local pernaDireita = charOrigem:FindFirstChild("RightLeg") or charOrigem:FindFirstChild("RightLowerLeg") or charOrigem:FindFirstChild("Right Leg")
                     if pernaDireita and pernaDireita:IsA("BasePart") then 
                         destinoCFrame = pernaDireita.CFrame 
                     end
                 end
 
-                -- Dispara a replicação assíncrona dos cones de tráfego
                 for _, prop in ipairs(trafficCones:GetChildren()) do
                     local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
                     if setCFrameRemote then 
@@ -1958,7 +1953,6 @@ elseif cmd == ":tp" and argumentos[2] and argumentos[3] then
                     end
                 end
 
-                -- Finaliza o ciclo limpando os objetos do servidor
                 if chegouNoDestino then
                     finalizado = true 
                     task.wait(0.1)
@@ -1978,6 +1972,7 @@ elseif cmd == ":tp" and argumentos[2] and argumentos[3] then
             _G.TpPropsAtivo = false
         end)
     end
+end -- Fecha o bloco principal do comando com segurança
 
 -- ====================================================================
 -- SISTEMA DE INTERFACE VISUAL PARA ;CMDS (COLE NO FINAL DO ARQUIVO)
