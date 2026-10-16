@@ -15,10 +15,8 @@ local MainTab = Window:Tab({
     Icon = "terminal"
 })
 
-local AlvoSelecionado = ""
-
 -- ============================================================
--- 1. SELEÇÃO DE ALVO (TextBox Otimizada da WindUI)
+-- 1. SELEÇÃO DE ALVO (TextBox Corrigida e Otimizada da WindUI)
 -- ============================================================
 local InputAlvos = MainTab:Input({
     Title = "PromptR's target",
@@ -36,7 +34,8 @@ local InputAlvos = MainTab:Input({
         local jogadorEncontrado = nil
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer then
-                if string.sub(string.lower(p.Name), 1, #argumento) == argumento then
+                -- Usando string.find para localizar o alvo por qualquer parte do Nome ou DisplayName
+                if string.find(string.lower(p.Name), argumento) or string.find(string.lower(p.DisplayName), argumento) then
                     jogadorEncontrado = p.Name
                     break
                 end
@@ -46,10 +45,10 @@ local InputAlvos = MainTab:Input({
         if jogadorEncontrado then
             AlvoSelecionado = jogadorEncontrado
         else
-            AlvoSelecionado = ""
+            AlvoSelecionado = OpcaoSelecionada -- Mantém o texto bruto para o caso de strings globais ou carregamentos tardios
         end
     end
-end)
+})
 
 MainTab:Button({
     Title = ":cmds",
