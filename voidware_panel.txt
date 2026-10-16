@@ -15,53 +15,40 @@ local MainTab = Window:Tab({
     Icon = "terminal"
 })
 
--- Variável global para armazenar o alvo selecionado
 local AlvoSelecionado = ""
 
--- Função para obter a lista de jogadores atuais (excluindo o próprio jogador)
-local function obterListaJogadores()
-    local lista = {}
-    for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
-        if p ~= game:GetService("Players").LocalPlayer then
-            table.insert(lista, p.Name)
-        end
-    end
-    return lista
-end
-
 -- ============================================================
--- 1. SELEÇÃO DE ALVO (Dropdown Nativo da WindUI)
+-- 1. SELEÇÃO DE ALVO (TextBox Otimizada da WindUI)
 -- ============================================================
-local DropdownAlvos = MainTab:Dropdown({
-    Title = "Selecionar Alvo",
-    Desc = "Escolha um jogador do servidor para executar ações",
-    Values = obterListaJogadores(),
-    Value = "",
+local InputAlvos = MainTab:Input({
+    Title = "PromptR's target",
+    Desc = "alvo do painel",
     Callback = function(OpcaoSelecionada)
-        if type(OpcaoSelecionada) == "table" then
-            AlvoSelecionado = OpcaoSelecionada[1] or ""
+        if OpcaoSelecionada == "" then 
+            AlvoSelecionado = ""
+            return 
+        end
+        
+        local argumento = string.lower(OpcaoSelecionada)
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+
+        local jogadorEncontrado = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then
+                if string.sub(string.lower(p.Name), 1, #argumento) == argumento then
+                    jogadorEncontrado = p.Name
+                    break
+                end
+            end
+        end
+
+        if jogadorEncontrado then
+            AlvoSelecionado = jogadorEncontrado
         else
-            AlvoSelecionado = OpcaoSelecionada or ""
+            AlvoSelecionado = ""
         end
     end
-})
-
--- Sincronização automatizada da lista do dropdown
-local function atualizarDropdown()
-    local novaLista = obterListaJogadores()
-    DropdownAlvos:Refresh(novaLista)
-end
-
-game:GetService("Players").PlayerAdded:Connect(function()
-    task.wait(0.5)
-    atualizarDropdown()
-end)
-
-game:GetService("Players").PlayerRemoving:Connect(function(player)
-    if AlvoSelecionado == player.Name then
-        AlvoSelecionado = ""
-    end
-    atualizarDropdown()
 end)
 
 MainTab:Button({
