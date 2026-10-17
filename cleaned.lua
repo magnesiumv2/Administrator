@@ -1,5 +1,5 @@
 do
-  ([[This file was protected with MoonSec V3]]):gsub('.+', (function(a) _FnrKhAaOXYYJ = a;
+  ([[struck by Magnesium]]):gsub('.+', (function(a) _FnrKhAaOXYYJ = a;
 end
 ));
 EIMQRqLBtCoqlQpS=_ENV;
