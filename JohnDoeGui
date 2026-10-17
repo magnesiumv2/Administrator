@@ -1,0 +1,188 @@
+local PlayerGui = game:GetService("Players").LocalPlayer.PlayerGui
+
+local JohnDoeGui = Instance.new("ScreenGui")
+JohnDoeGui.Name = "JohnDoeGui"
+JohnDoeGui.Parent = PlayerGui
+
+local JohnDoeFrame = Instance.new("Frame")
+JohnDoeFrame.Name = "JohnDoeFrame"
+JohnDoeFrame.Parent = JohnDoeGui
+JohnDoeFrame.Position = UDim2.new(0, 212, 0, -6)
+JohnDoeFrame.Size = UDim2.new(0, 400, 0, 290)
+JohnDoeFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+
+local JohnDoe = Instance.new("TextButton")
+JohnDoe.Name = "JohnDoe"
+JohnDoe.Parent = JohnDoeFrame
+JohnDoe.Position = UDim2.new(0, 0, 0, 0)
+JohnDoe.Size = UDim2.new(0, 50, 0, 35)
+JohnDoe.Text = "JohnDoe MT4"
+JohnDoe.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+JohnDoe.Activated:Connect(function()
+local args = {
+    18195399374
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Wear"):InvokeServer(unpack(args))
+
+wait(1)
+
+local args = {
+    96026864630989
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Wear"):InvokeServer(unpack(args))
+
+wait(1)
+
+local args = {
+    137306203100435
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("WearPants"):InvokeServer(unpack(args))
+
+wait(1)
+
+local args = {
+    84226890739551
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("WearShirt"):InvokeServer(unpack(args))
+
+wait(1)
+
+local args = {
+    18635837646,
+    "0009FreeRed"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ApplyEmmiter"):InvokeServer(unpack(args))
+
+wait(1)
+
+local args = {
+    13108884719313
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("WearBundle"):InvokeServer(unpack(args))
+
+wait(1)
+
+local args = {
+    "Really black"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ChangeBodyColor"):FireServer(unpack(args))
+
+wait(1)
+
+local args = {
+    72324041474487,
+    34401127859229
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Wear"):InvokeServer(unpack(args))
+
+wait(1)
+
+local args = {
+    77038464130375,
+    34401127859229
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Wear"):InvokeServer(unpack(args))
+
+wait(1)
+
+local args = {
+    71693880993883,
+    34401127859229
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Wear"):InvokeServer(unpack(args))
+
+wait(1)
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+local IMAGEM_JOHN_DOE_ID = "rbxassetid://113213458632705" 
+
+local liberado = true
+
+local novaFerramenta = Instance.new("Tool")
+novaFerramenta.Name = "Kill Player"
+novaFerramenta.ToolTip = "Kill Player"
+novaFerramenta.TextureId = IMAGEM_JOHN_DOE_ID
+novaFerramenta.RequiresHandle = true
+
+local handle = Instance.new("Part")
+handle.Name = "Handle"
+handle.Size = Vector3.new(1, 1, 2)
+handle.Transparency = 1
+handle.Parent = novaFerramenta
+
+novaFerramenta.Activated:Connect(function()
+    if not liberado then return end
+    
+    local alvoFisico = mouse.Target
+    if alvoFisico and alvoFisico.Parent then
+      
+        local personagemAlvo = alvoFisico.Parent
+        if not personagemAlvo:FindFirstChild("Humanoid") then
+            personagemAlvo = personagemAlvo.Parent
+        end
+        
+        local jogadorAlvo = Players:GetPlayerFromCharacter(personagemAlvo)
+        
+        if jogadorAlvo and jogadorAlvo ~= player then
+            liberado = false -- Trava de 1 segundo ativada (anti-spam humano)
+            
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+            
+            if trafficCones then
+                if _G.PunishAtivo then 
+                    _G.PunishAtivo = false 
+                    task.wait(0.1) 
+                end
+                _G.PunishAtivo = true
+
+                task.spawn(function()
+                    while _G.PunishAtivo and jogadorAlvo and jogadorAlvo.Parent == Players and jogadorAlvo.Character and jogadorAlvo.Character:FindFirstChild("HumanoidRootPart") do
+                        local targetChar = jogadorAlvo.Character
+                        local targetHRP = targetChar.HumanoidRootPart
+                        local humanoid = targetChar:FindFirstChildOfClass("Humanoid")
+                        
+                        if humanoid and humanoid.Health <= 0 then break end
+                        local destinoPunishCFrame = targetHRP.CFrame
+                        
+                        if humanoid and (humanoid.Sit or targetChar:FindFirstChild("Seat") or targetChar:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                            destinoPunishCFrame = CFrame.new(99999999999999, -501, -9999999999999999)
+                            local cadeiraFisica = humanoid.SeatPart or targetChar:FindFirstChild("Seat") or targetChar:FindFirstChild("VehicleSeat")
+                            if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                                pcall(function() if cadeiraFisica.Anchored then cadeiraFisica.Anchored = false end end)
+                            end
+                        else
+                            local pernaDireita = targetChar:FindFirstChild("RightLeg") or targetChar:FindFirstChild("RightLowerLeg") or targetChar:FindFirstChild("Right Leg")
+                            if pernaDireita and pernaDireita:IsA("BasePart") then destinoPunishCFrame = pernaDireita.CFrame end
+                        end
+                        
+                        local props = trafficCones:GetChildren()
+                        if #props > 0 then
+                            for _, prop in pairs(props) do
+                                if not _G.PunishAtivo or not (jogadorAlvo.Character and jogadorAlvo.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                    task.spawn(function() 
+                                        pcall(function() setCFrameRemote:InvokeServer(destinoPunishCFrame) end) 
+                                    end)
+                                end
+                            end
+                        end
+                        task.wait(0.1) 
+                    end
+                    _G.PunishAtivo = false
+                end)
+            end
+            
+            wait(1)
+            liberado = true
+        end
+    end
+end)
+
+novaFerramenta.Parent = player.Backpack
+print("BRUTAL ENIGMA")
+end)
