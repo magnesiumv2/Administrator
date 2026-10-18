@@ -15,6 +15,10 @@ local JohnDoeList = Instance.new("UIListLayout")
 JohnDoeList.Name = "JohnDoeList"
 JohnDoeList.Parent = JohnDoeFrame
 
+local JohnDoeDrag = Instance.new("UIDragDetector")
+JohnDoeDrag.Name = "JohnDoeDrag"
+JohnDoeDrag.Parent = JohnDoeFrame
+
 local JohnDoe = Instance.new("TextButton")
 JohnDoe.Name = "JohnDoe"
 JohnDoe.Parent = JohnDoeFrame
