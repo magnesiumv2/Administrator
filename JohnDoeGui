@@ -11,12 +11,18 @@ JohnDoeFrame.Position = UDim2.new(0, 212, 0, -6)
 JohnDoeFrame.Size = UDim2.new(0, 400, 0, 290)
 JohnDoeFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 
+local JohnDoeDrag = Instance.new("UiDragDetector")
+JohnDoeDrag.Name = "JohnDoeDrag"
+JohnDoeDrag.Parent = JohnDoeFrame
+
 local JohnDoe = Instance.new("TextButton")
 JohnDoe.Name = "JohnDoe"
 JohnDoe.Parent = JohnDoeFrame
 JohnDoe.Position = UDim2.new(0, 0, 0, 0)
 JohnDoe.Size = UDim2.new(0, 50, 0, 35)
 JohnDoe.Text = "JohnDoe MT4"
+JohnDoe.TextColor3 = Color3.fromRGB(255, 0, 0)
+JohnDoe.TextSize = 5
 JohnDoe.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
 JohnDoe.Activated:Connect(function()
 local args = {
