@@ -14,7 +14,7 @@ JohnDoeFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 local JohnDoeDrag = Instance.new("UIDragDetector")
 JohnDoeDrag.Name = "JohnDoeDrag"
 JohnDoeDrag.Parent = JohnDoeFrame
-JohnDoeDrag.ControlMode = Enum.DragDetectorControlMode.Enum
+JohnDoeDrag.DragControl = Enum.DragDetectorControlMode.None
 
 local JohnDoe = Instance.new("TextButton")
 JohnDoe.Name = "JohnDoe"
