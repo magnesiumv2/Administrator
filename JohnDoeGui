@@ -400,3 +400,16 @@ wait(5)
 HAHAHAHA:Destroy()
 print("UNSTOPPABLE AVAILABLE")
 end)
+
+local PromptRAdmin = Instance.new("TextButton")
+PromptRAdmin.Name = "PromptRAdmin"
+PromptRAdmin.Parent = JohnDoeFrame
+PromptRAdmin.Position = UDim2.new(0, 0, 0, 0)
+PromptRAdmin.Size = UDim2.new(0, 50, 35)
+PromptRAdmin.Text = "PromptR"
+PromptRAdmin.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+PromptRAdmin.TextColor3 = Color3.fromRGB(255, 0, 0)
+PromptRAdmin.TextSize = 5
+PromptR.MouseButton1Click:Connect(function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/magnesiumv2/Administrator/refs/heads/main/voidware_panel.txt"))()
+end)
