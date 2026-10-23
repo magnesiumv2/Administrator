@@ -2150,7 +2150,7 @@ local function encontrarJogadorPorIniciais(texto)
 end
 
 -- 1. Caixa de Texto para você digitar as iniciais do jogador
-local PlayerInput = Inform:TextBox({
+local PlayerInput = Inform:Input({
     Title = "Nome do Infrator",
     Placeholder = "Jogador Infrator...",
     Callback = function(text)
