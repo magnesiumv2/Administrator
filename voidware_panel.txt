@@ -2127,3 +2127,105 @@ end
 local Inform = Window:Tab({
    Title = "Inform",
    })
+
+local Players = game:GetService("Players")
+
+-- NOTA: Certifique-se de que a sua variável da Wind UI esteja carregada no topo do script.
+-- Exemplo: local WindUI = loadstring(game:HttpGet(...))()
+
+-- Função de busca inteligente por iniciais ou parte do nome
+local function encontrarJogadorPorIniciais(texto)
+    local textoMinusculo = string.lower(texto)
+    for _, jogador in pairs(Players:GetPlayers()) do
+        local nickMinusculo = string.lower(jogador.Name)
+        local displayMinusculo = string.lower(jogador.DisplayName)
+        
+        -- Verifica se o texto digitado bate com o início do Nick ou Display Name
+        if string.sub(nickMinusculo, 1, #textoMinusculo) == textoMinusculo or 
+           string.sub(displayMinusculo, 1, #textoMinusculo) == textoMinusculo then
+            return jogador
+        end
+    end
+    return nil
+end
+
+-- 1. Caixa de Texto para você digitar as iniciais do jogador
+local PlayerInput = Inform:TextBox({
+    Title = "Nome do Infrator",
+    Placeholder = "Jogador Infrator...",
+    Callback = function(text)
+        _G.TargetPlayerName = text
+    end
+})
+
+-- 2. Botão para Buscar e Copiar o ID da Camisa (Shirt)
+Inform:Button({
+    Title = "Copiar ID da Camisa",
+    Desc = "Busca por iniciais e copia o ID da camisa",
+    Callback = function()
+        local targetName = _G.TargetPlayerName
+        if not targetName or targetName == "" then
+            WindUI:Notify({Title = "Erro", Content = "Digite as iniciais de um jogador!", Type = "Error"})
+            return
+        end
+        
+        local targetPlayer = encontrarJogadorPorIniciais(targetName)
+        
+        if targetPlayer and targetPlayer.Character then
+            local shirt = targetPlayer.Character:FindFirstChildOfClass("Shirt")
+            if shirt and shirt.ShirtTemplate ~= "" then
+                local shirtId = string.match(shirt.ShirtTemplate, "%d+")
+                if shirtId then
+                    setclipboard(shirtId)
+                    WindUI:Notify({
+                        Title = "Sucesso!",
+                        Content = "ID da Camisa de @" .. targetPlayer.Name .. " copiado!",
+                        Type = "Success"
+                    })
+                else
+                    WindUI:Notify({Title = "Aviso", Content = "Falha ao extrair números do ID.", Type = "Warning"})
+                end
+            else
+                WindUI:Notify({Title = "Aviso", Content = "O jogador não está usando camisa do catálogo.", Type = "Warning"})
+            end
+        else
+            WindUI:Notify({Title = "Erro", Content = "Nenhum jogador encontrado com essas iniciais.", Type = "Error"})
+        end
+    end
+})
+
+-- 3. Botão para Buscar e Copiar o ID da Calça (Pants)
+Inform:Button({
+    Title = "Copiar ID da Calça",
+    Desc = "Busca por iniciais e copia o ID da calça",
+    Callback = function()
+        local targetName = _G.TargetPlayerName
+        if not targetName or targetName == "" then
+            WindUI:Notify({Title = "Erro", Content = "Digite as iniciais de um jogador!", Type = "Error"})
+            return
+        end
+        
+        local targetPlayer = encontrarJogadorPorIniciais(targetName)
+        
+        if targetPlayer and targetPlayer.Character then
+            local pants = targetPlayer.Character:FindFirstChildOfClass("Pants")
+            if pants and pants.PantsTemplate ~= "" then
+                local pantsId = string.match(pants.PantsTemplate, "%d+")
+                if pantsId then
+                    setclipboard(pantsId)
+                    WindUI:Notify({
+                        Title = "Sucesso!",
+                        Content = "ID da Calça de @" .. targetPlayer.Name .. " copiado!",
+                        Type = "Success"
+                    })
+                else
+                    WindUI:Notify({Title = "Aviso", Content = "Falha ao extrair números do ID.", Type = "Warning"})
+                end
+            else
+                WindUI:Notify({Title = "Aviso", Content = "O jogador não está usando calça do catálogo.", Type = "Warning"})
+            end
+        else
+            WindUI:Notify({Title = "Erro", Content = "Nenhum jogador encontrado com essas iniciais.", Type = "Error"})
+        end
+    end
+})
