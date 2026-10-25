@@ -1846,7 +1846,7 @@ Server:Button({
         })
 
         task.spawn(function()
-            for m = 1, 500 do
+            for m = 1, 900000 do
                 task.spawn(function()
                     if toolRemote:IsA("RemoteFunction") then
                         toolRemote:InvokeServer("PickingTools", "FireHose")
