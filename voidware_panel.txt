@@ -1822,7 +1822,7 @@ local Server = Window:Tab({
 })
 
 Server:Button({
-    Title = "network stress due to requests"
+    Title = "network stress due to requests",
     Desc = "Causa um DoS, mas não derruba o servidor, apenas trava e pode causa erro de internet 277 para outros jogadores",
     Callback = function()
         local player = game:GetService("Players").LocalPlayer
