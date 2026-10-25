@@ -1905,3 +1905,53 @@ local Client = Window:Tab({
 local Security = Window:Tab({
    Title = "Security",
 })
+
+-- ============================================================
+-- ABA 5: SECURITY (Scanner Automático e Auditoria de Segurança)
+-- ============================================================
+local AlvoPath = game:GetService("ReplicatedStorage"):WaitForChild("RE", 5)
+
+if AlvoPath then
+    local nomesEventos = {}
+    local nomesFunctions = {}
+    local totalContado = 0
+
+    -- 1. Varre a pasta RE e separa os nomes por tipo de Remoto
+    for _, objeto in ipairs(AlvoPath:GetDescendants()) do
+        if objeto:IsA("RemoteEvent") then
+            table.insert(nomesEventos, objeto.Name)
+            totalContado = totalContado + 1
+        elseif objeto:IsA("RemoteFunction") then
+            table.insert(nomesFunctions, objeto.Name)
+            totalContado = totalContado + 1
+        end
+    end
+
+    -- 2. Concatena as tabelas de nomes em strings limpas separadas por vírgula
+    local textoEventos = #nomesEventos > 0 and table.concat(nomesEventos, ", ") or "Nenhum detectado"
+    local textoFunctions = #nomesFunctions > 0 and table.concat(nomesFunctions, ", ") or "Nenhum detectado"
+
+    -- 3. Exibe o resumo total em um parágrafo informativo
+    Security:Paragraph({
+        Title = "🔍 Relatório de Varredura (" .. tostring(totalContado) .. " encontrados)",
+        Desc = "Lista consolidada de todas as portas de comunicação abertas no diretório RE."
+    })
+
+    -- 4. Exibe TODOS os RemoteEvents juntos no parágrafo
+    Security:Paragraph({
+        Title = "📡 RemoteEvents Encontrados",
+        Desc = textoEventos -- Exemplo de saída: 1Too1l, 1Clea1rT1oo1ls, HouseRemote
+    })
+
+    -- 5. Exibe TODAS as RemoteFunctions juntas no parágrafo
+    Security:Paragraph({
+        Title = "⚡ RemoteFunctions Encontradas",
+        Desc = textoFunctions
+    })
+else
+    -- Alerta caso a pasta RE não exista no servidor atual
+    Security:Paragraph({
+        Title = "Erro de Auditoria",
+        Desc = "A pasta 'game.ReplicatedStorage.RE' não foi localizada no ambiente."
+    })
+end
