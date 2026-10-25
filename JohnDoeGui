@@ -288,7 +288,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Wear"
 wait(1)
 
 local args = {
-    169918258811726
+	168769252650791
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("WearBundle"):InvokeServer(unpack(args))
 
