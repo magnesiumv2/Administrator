@@ -2005,8 +2005,50 @@ Server:Button({
     end
 })
 
+local LabelServerRemoto = Server:Paragraph({
+    Title = "📡 Último Remoto do Servidor",
+    Desc = "Monitoramento desativado."
+})
+
+_G.MonitorServerAtivo = false
+
+Server:Toggle({
+    Title = "Monitorar Remotos do Servidor",
+    Desc = "Ativa o rastreamento em tempo real de chamadas recebidas pelas estruturas do mapa",
+    Value = false,
+    Callback = function(bool)
+        _G.MonitorServerAtivo = bool
+        if not bool then
+            LabelServerRemoto:SetDescription("Monitoramento desativado.")
+        else
+            LabelServerRemoto:SetDescription("Aguardando tráfego de rede...")
+        end
+    end
+})
+
 local Client = Window:Tab({
    Title = "Client",
+})
+
+local LabelClientRemoto = Client:Paragraph({
+    Title = "⚡ Último Remoto Disparado pelo Cliente",
+    Desc = "Monitoramento desativado."
+})
+
+_G.MonitorClientAtivo = false
+
+Client:Toggle({
+    Title = "Monitorar Saída do Cliente",
+    Desc = "Ativa o rastreamento em tempo real de todos os remotos que o seu jogo envia",
+    Value = false,
+    Callback = function(bool)
+        _G.MonitorClientAtivo = bool
+        if not bool then
+            LabelClientRemoto:SetDescription("Monitoramento desativado.")
+        else
+            LabelClientRemoto:SetDescription("Aguardando disparos locais...")
+        end
+    end
 })
 
 local Security = Window:Tab({
@@ -2062,3 +2104,56 @@ else
         Desc = "A pasta 'game.ReplicatedStorage.RE' não foi localizada no ambiente."
     })
 end
+
+task.spawn(function()
+    local gmt = getrawmetatable(game)
+    if not gmt then return end
+    
+    setreadonly(gmt, false)
+    local oldNamecall = gmt.__namecall
+    
+    gmt.__namecall = newcclosure(function(self, ...)
+        local metodo = getnamecallmethod()
+        local args = {...}
+        
+        -- 1. Captura ações do CLIENT (O que você está enviando)
+        if metodo == "FireServer" or metodo == "InvokeServer" then
+            if _G.MonitorClientAtivo and self and self.Name then
+                -- Formata os argumentos em string para exibição limpa
+                local strArgs = ""
+                for i, v in ipairs(args) do
+                    strArgs = strArgs .. "[" .. tostring(i) .. "] " .. tostring(v) .. "  "
+                end
+                if strArgs == "" then strArgs = "Nenhum argumento" end
+                
+                -- Atualiza a interface da WindUI de forma segura
+                task.spawn(function()
+                    pcall(function()
+                        LabelClientRemoto:SetDescription("Nome: " .. tostring(self.Name) .. "\nTipo: " .. tostring(metodo) .. "\nArgs: " .. strArgs)
+                    end)
+                end)
+            end
+        end
+        
+        -- 2. Captura tráfego direcionado a estruturas do SERVER (Interações do mapa/Brookhaven)
+        if _G.MonitorServerAtivo and (metodo == "FireServer" or metodo == "InvokeServer") then
+            -- Filtra se o remoto pertence a pastas comuns de comunicação do servidor (como ReplicatedStorage.RE)
+            if self:IsDescendantOf(game:GetService("ReplicatedStorage")) then
+                local strArgsServer = ""
+                for i, v in ipairs(args) do
+                    strArgsServer = strArgsServer .. "[" .. tostring(i) .. "] " .. tostring(v) .. "  "
+                end
+                if strArgsServer == "" then strArgsServer = "Nenhum argumento" end
+                
+                task.spawn(function()
+                    pcall(function()
+                        LabelServerRemoto:SetDescription("Remoto: " .. tostring(self.Name) .. "\nCaminho: game." .. tostring(self:GetFullName()) .. "\nDados: " .. strArgsServer)
+                    end)
+                end)
+            end
+        end
+        
+        return oldNamecall(self, ...)
+    end)
+    setreadonly(gmt, true)
+end)
