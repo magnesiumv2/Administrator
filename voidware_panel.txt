@@ -2098,7 +2098,7 @@ local BrilhoOriginal = Iluminacao.Brightness
 local LuzAmbienteOriginal = Iluminacao.Ambient
 local LuzExternaOriginal = Iluminacao.OutdoorAmbient
 
-ClientTab:Toggle({
+Client:Toggle({
     Title = "Luz para a noite para o Client",
     Desc = "Remove todas as sombras e a escuridão da noite localmente",
     Value = false,
@@ -2155,7 +2155,7 @@ end)
 local ItemParaPegar = ""
 
 -- 1. Cria a Caixa de Texto (Input) para o nome do item
-ClientTab:Input({
+Client:Input({
     Title = "Nome Exato do Item",
     Placeholder = "Nome exato",
     Callback = function(texto)
@@ -2164,7 +2164,7 @@ ClientTab:Input({
 })
 
 -- 2. Cria o Botão para disparar o Remote e obter o item digitado
-ClientTab:Button({
+Client:Button({
     Title = "Requisição para pegar o item",
     Desc = "Envia a requisição para o servidor gerar o item na sua mochila",
     Callback = function()
