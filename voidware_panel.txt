@@ -2186,7 +2186,7 @@ Client:Button({
             -- Prepara os argumentos exatos que o jogo Brookhaven espera receber
             local args = {
                 [1] = "PickingTools",
-                [2] = ItemParaPegar
+                [2] = "ItemParaPegar"
             }
 
             -- Dispara de forma assíncrona e segura com pcall para não quebrar a sua UI
