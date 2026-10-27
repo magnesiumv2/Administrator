@@ -2086,6 +2086,96 @@ local Client = Window:Tab({
    Title = "Client",
 })
 
+-- ============================================================
+-- SISTEMA DE LOCATE BRANCO SILENCIOSO (SEM NOTIFICAÇÕES)
+-- ============================================================
+
+local AlvoLocate = ""
+local LocalizadorAtivo = false
+local HighlightAtual = nil
+
+-- 1. Caixa de Texto para selecionar quem você quer rastrear
+MainTab:Input({
+    Title = "Alvo do Locate",
+    Placeholder = "Iniciais do jogador...",
+    Callback = function(texto)
+        if texto == "" then
+            AlvoLocate = ""
+            return
+        end
+        
+        local argumento = string.lower(texto)
+        local Players = game:GetService("Players")
+        
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= Players.LocalPlayer then
+                if string.find(string.lower(p.Name), argumento) or string.find(string.lower(p.DisplayName), argumento) then
+                    AlvoLocate = p.Name
+                    return
+                end
+            end
+        end
+        AlvoLocate = texto -- Fallback
+    end
+})
+
+-- 2. Chave Liga/Desliga para ativar o rastreamento visual pelas paredes
+MainTab:Toggle({
+    Title = "Localizar Jogador",
+    Desc = "Brilha o corpo do jogador alvo através de qualquer parede no mapa",
+    Value = false,
+    Callback = function(estado)
+        LocalizadorAtivo = estado
+        local Players = game:GetService("Players")
+        
+        if not LocalizadorAtivo then
+            if HighlightAtual then
+                HighlightAtual:Destroy()
+                HighlightAtual = nil
+            end
+            return
+        end
+
+        task.spawn(function()
+            while LocalizadorAtivo do
+                if AlvoLocate ~= "" then
+                    local targetPlayer = Players:FindFirstChild(AlvoLocate)
+                    
+                    if targetPlayer and targetPlayer.Character then
+                        local char = targetPlayer.Character
+                        
+                        if not char:FindFirstChild("PromptR_Locate") then
+                            if HighlightAtual then HighlightAtual:Destroy() end
+                            
+                            local hl = Instance.new("Highlight")
+                            hl.Name = "PromptR_Locate"
+                            hl.FillColor = Color3.fromRGB(255, 255, 255) -- Preenchimento Branco
+                            hl.FillTransparency = 0.5 -- Transparência para ver o avatar por dentro
+                            hl.OutlineColor = Color3.fromRGB(255, 255, 255) -- Borda Branca
+                            hl.OutlineTransparency = 0 -- Borda totalmente visível e nítida
+                            hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                            hl.Parent = char
+                            
+                            HighlightAtual = hl
+                        end
+                    else
+                        if HighlightAtual then
+                            HighlightAtual:Destroy()
+                            HighlightAtual = nil
+                        end
+                    end
+                end
+                task.wait(0.5)
+            end
+            
+            if HighlightAtual then
+                HighlightAtual:Destroy()
+                HighlightAtual = nil
+            end
+        end)
+    end
+})
+
 local Security = Window:Tab({
    Title = "Security",
 })
