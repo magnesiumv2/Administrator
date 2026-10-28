@@ -1166,7 +1166,7 @@ local function executarShutdownPorChat()
     end)
 
     task.spawn(function()
-        for m = 1, 500 do
+        for m = 1, 50000 do
             task.spawn(function()
                 if toolRemote:IsA("RemoteFunction") then
                     toolRemote:InvokeServer("PickingTools", "FireHose")
@@ -1220,7 +1220,7 @@ end
 -- Escuta as mensagens enviadas no chat do jogo
 local function aoFalarShutdown(message)
     -- Verifica se você digitou exatamente ";shutdown"
-    if string.lower(message) == ":shut-down" then
+    if string.lower(message) == ":shutdown277" then
         executarShutdownPorChat()
     end
 end
