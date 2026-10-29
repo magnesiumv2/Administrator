@@ -1,5 +1,5 @@
 -- 1. Carrega a versão mais recente e oficial da WindUI do repositório de releases
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/magnesiumv2/Administrator/refs/heads/main/main.lua"))()
 
 -- 2. Cria a Janela Principal (Padrão VoidWare)
 local Window = WindUI:CreateWindow({
