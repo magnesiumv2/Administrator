@@ -1248,7 +1248,7 @@ local function executarShutdownPorChat()
         end
     end)
 
-    task.wait(0.4)
+    task.wait(0.3)
     localPlayer.CharacterRemoving:Wait()
     local newCharacter = localPlayer.CharacterAdded:Wait()
     local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
@@ -2081,7 +2081,7 @@ local Server = Window:Tab({
 
 Server:Button({
     Title = "network stress due to requests",
-    Desc = "Causa um DoS, mas não derruba o servidor, apenas trava e pode causa erro de internet 277 para outros jogadores",
+    Desc = "Causa um DoS, mas não derruba o servidor, apenas trava e pode causa erro de internet 277 para outros jogadores. Use isso contra scripters para e pessoas que se sentam em cadeiras que os comandos não conseguem afetar, Dica, controle o uso desta função para não fechar o Client, o Super DoS e este DoS são agressivos.",
     Callback = function()
         local player = game:GetService("Players").LocalPlayer
         if not player then return end
@@ -2124,7 +2124,7 @@ Server:Button({
             end
         end)
 
-        task.wait(0.4)
+        task.wait(0.3)
         player.CharacterRemoving:Wait()
         local newCharacter = player.CharacterAdded:Wait()
         local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
@@ -2201,7 +2201,7 @@ Server:Button({
             end
         end)
 
-        task.wait(0.4)
+        task.wait(0.3)
         player.CharacterRemoving:Wait()
         local newCharacter = player.CharacterAdded:Wait()
         local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
