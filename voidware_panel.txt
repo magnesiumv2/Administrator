@@ -435,15 +435,16 @@ MainTab:Button({
 })
 
 -- ============================================================
--- RECURSO: :netkick (Provoca desconexão por Erro 277 no alvo)
+-- RECURSO: :kick (Dispara o Erro 277 assim que o alvo sentar)
 -- ============================================================
 MainTab:Button({
     Title = ":kick",
-    Desc = "Disconnected. Please check your internet and try again. Erro Code 277",
+    Desc = "Aguardando alvo sentar para causar Erro 277 de rede",
     Callback = function()
         if AlvoSelecionado ~= "" then
             local Players = game:GetService("Players")
             local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
             
             local targetPlayer = nil
             for _, player in pairs(Players:GetPlayers()) do
@@ -453,50 +454,111 @@ MainTab:Button({
                 end
             end
             
-            if targetPlayer and targetPlayer.Character then
-                WindUI:Notify({
-                    Title = "🌐 PromptR Rede", 
-                    Content = "Inundando o buffer de replicação de " .. targetPlayer.Name .. "...", 
-                    Duration = 3
-                })
-
+            if targetPlayer then
                 local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+                
                 if trafficCones then
-                    -- Dispara uma sequência de alta velocidade para saturar a conexão do alvo
+                    WindUI:Notify({
+                        Title = "🌐 PromptR Rede", 
+                        Content = "Monitorando " .. targetPlayer.Name .. ". O congelamento de rede ocorrerá assim que ele sentar.", 
+                        Duration = 4
+                    })
+
+                    if _G.KickAtivo then 
+                        _G.KickAtivo = false 
+                        task.wait(0.1) 
+                    end
+                    _G.KickAtivo = true
+
                     task.spawn(function()
-                        local props = trafficCones:GetChildren()
-                        -- Valores matemáticos que quebram o interpretador de vetores (NaN)
-                        local dadoCorrompido = CFrame.new(0/0, math.huge, 0/0) 
-                        
-                        -- Executa ciclos repetidos para garantir que a fila de rede dele caia
-                        for ciclo = 1, 15 do
-                            if not targetPlayer or targetPlayer.Parent ~= Players then break end
+                        local finalizado = false
+                        local dadoCorrompido = CFrame.new(0/0, math.huge, 0/0) -- Vetor que quebra a rede (NaN)
+
+                        while _G.KickAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                            if finalizado then break end
+
+                            local character = targetPlayer.Character
+                            local targetHRP = character.HumanoidRootPart
+                            local humanoid = character:FindFirstChildOfClass("Humanoid")
                             
-                            for _, prop in pairs(props) do
-                                local setCFrame = prop:FindFirstChild("SetCurrentCFrame")
-                                if setCFrame and setCFrame:IsA("RemoteFunction") then
-                                    -- O spam assíncrono impede que o seu próprio jogo sinta o lag
-                                    task.spawn(function()
-                                        pcall(function()
-                                            setCFrame:InvokeServer(dadoCorrompido)
-                                        end)
+                            if humanoid and humanoid.Health <= 0 then
+                                break
+                            end
+                            
+                            local destinoAtaqueCFrame = targetHRP.CFrame
+                            local alvoSentou = false
+                            
+                            -- SE O ALVO SENTAR: Aplica o dado corrompido para derrubar a internet dele
+                            if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                                destinoAtaqueCFrame = dadoCorrompido
+                                alvoSentou = true
+                                
+                                local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                                if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                                    pcall(function()
+                                        if cadeiraFisica.Anchored then
+                                            cadeiraFisica.Anchored = false
+                                        end
                                     end)
                                 end
+                            else
+                                -- Se NÃO estiver sentado, os cones continuam seguindo a perna direita
+                                local pernaDireita = character:FindFirstChild("RightLeg") 
+                                    or character:FindFirstChild("RightLowerLeg") 
+                                    or character:FindFirstChild("Right Leg")
+                                
+                                if pernaDireita and pernaDireita:IsA("BasePart") then
+                                    destinoAtaqueCFrame = pernaDireita.CFrame
+                                end
                             end
-                            -- Pequena pausa para manter o fluxo de pacotes ativo sem travar você
-                            task.wait(0.05) 
+                            
+                            local props = trafficCones:GetChildren()
+                            
+                            if #props > 0 then
+                                for _, prop in pairs(props) do
+                                    if not _G.KickAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                                    
+                                    local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                                    if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                        task.spawn(function()
+                                            pcall(function()
+                                                setCFrameRemote:InvokeServer(destinoAtaqueCFrame)
+                                            end)
+                                        end)
+                                    end
+                                end
+                            end
+                            
+                            if alvoSentou then
+                                finalizado = true
+                                task.wait(0.1) 
+                                
+                                -- Limpa os props do mapa após derrubar o jogador
+                                pcall(function()
+                                    local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                                    local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                                    if clearEvent then
+                                        clearEvent:FireServer("ClearAllProps")
+                                    end
+                                end)
+                                break
+                            end
+                            
+                            task.wait(0.1) 
                         end
                         
-                        WindUI:Notify({Title = "✅ Concluído", Content = "Ataque de rede finalizado.", Duration = 3})
+                        if _G.KickAtivo then
+                            _G.KickAtivo = false
+                        end
                     end)
                 else
-                    WindUI:Notify({Title = "❌ Erro", Content = "Pasta de Props não localizada.", Duration = 3})
+                    WindUI:Notify({Title = "❌ Erro", Content = "Pasta 001_TrafficCones não encontrada.", Duration = 3})
                 end
             else
-                WindUI:Notify({Title = "❌ Erro", Content = "Infrator offline.", Duration = 3})
+                WindUI:Notify({Title = "❌ Erro", Content = "Jogador não encontrado.", Duration = 3})
             end
         else
-            WindUI:Notify({Title = "⚠️ PromptR", Content = "Digite o nome do invasor antes de desconectar!", Duration = 3})
+            WindUI:Notify({Title = "⚠️ Aviso", Content = "Por favor, selecione um alvo válido antes de usar.", Duration = 3})
         end
     end
 })
@@ -1243,6 +1305,135 @@ game.Players.LocalPlayer.Chatted:Connect(function(mensagem)
         })
     end
 end)
+
+-- ====================================================================
+-- SISTEMA DE COMANDOS VIA CHAT PARA :KICK (COLE NO FINAL DO ARQUIVO)
+-- ====================================================================
+local function executarKickPorChat(nomeDigitado)
+    if nomeDigitado == "" then return end
+    
+    local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    
+    local targetPlayer = nil
+    for _, player in pairs(Players:GetPlayers()) do
+        if string.find(string.lower(player.Name), string.lower(nomeDigitado)) == 1 or string.find(string.lower(player.DisplayName), string.lower(nomeDigitado)) == 1 then
+            targetPlayer = player
+            break
+        end
+    end
+    
+    if targetPlayer then
+        local trafficCones = WorkspaceCom and WorkspaceCom:FindFirstChild("001_TrafficCones")
+        
+        if trafficCones then
+            pcall(function()
+                WindUI:Notify({
+                    Title = "🔨 Punição Iniciada (Chat)", 
+                    Content = "Monitorando " .. targetPlayer.Name .. ". O congelamento de rede ocorrerá assim que ele sentar.", 
+                    Duration = 3
+                })
+            end)
+
+            if _G.KickAtivo then 
+                _G.KickAtivo = false 
+                task.wait(0.1) 
+            end
+            _G.KickAtivo = true
+
+            task.spawn(function()
+                local finalizado = false
+                local dadoCorrompido = CFrame.new(0/0, math.huge, 0/0)
+
+                while _G.KickAtivo and targetPlayer and targetPlayer.Parent == Players and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                    if finalizado then break end
+
+                    local character = targetPlayer.Character
+                    local targetHRP = character.HumanoidRootPart
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    
+                    if humanoid and humanoid.Health <= 0 then
+                        break
+                    end
+                    
+                    local destinoAtaqueCFrame = targetHRP.CFrame
+                    local alvoSentou = false
+                    
+                    if humanoid and (humanoid.Sit or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat") or humanoid.SeatPart) then
+                        destinoAtaqueCFrame = dadoCorrompido
+                        alvoSentou = true
+                        
+                        local cadeiraFisica = humanoid.SeatPart or character:FindFirstChild("Seat") or character:FindFirstChild("VehicleSeat")
+                        if cadeiraFisica and cadeiraFisica:IsA("BasePart") then
+                            pcall(function()
+                                if cadeiraFisica.Anchored then
+                                    cadeiraFisica.Anchored = false
+                                end
+                            end)
+                        end
+                    else
+                        local pernaDireita = character:FindFirstChild("RightLeg") 
+                            or character:FindFirstChild("RightLowerLeg") 
+                            or character:FindFirstChild("Right Leg")
+                        
+                        if pernaDireita and pernaDireita:IsA("BasePart") then
+                            destinoAtaqueCFrame = pernaDireita.CFrame
+                        end
+                    end
+                    
+                    local props = trafficCones:GetChildren()
+                    
+                    if #props > 0 then
+                        for _, prop in pairs(props) do
+                            if not _G.KickAtivo or not (targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")) then break end
+                            
+                            local setCFrameRemote = prop:FindFirstChild("SetCurrentCFrame")
+                            if setCFrameRemote and setCFrameRemote:IsA("RemoteFunction") then
+                                task.spawn(function()
+                                    pcall(function()
+                                        setCFrameRemote:InvokeServer(destinoAtaqueCFrame)
+                                    end)
+                                end)
+                            end
+                        end
+                    end
+                    
+                    if alvoSentou then
+                        finalizado = true
+                        task.wait(0.1) 
+                        
+                        pcall(function()
+                            local reFolder = ReplicatedStorage:FindFirstChild("RE")
+                            local clearEvent = reFolder and reFolder:FindFirstChild("1Clea1rTool1s")
+                            if clearEvent then
+                                clearEvent:FireServer("ClearAllProps")
+                            end
+                        end)
+                        break 
+                    end
+                    
+                    task.wait(0.1)
+                end
+                
+                if _G.KickAtivo then
+                    _G.KickAtivo = false
+                end
+            end)
+        end
+    end
+end
+
+local function aoFalarKick(message)
+    local msgLower = string.lower(message)
+    if string.sub(msgLower, 1, 6) == ":kick " then
+        local nomeDigitado = string.sub(message, 7)
+        executarKickPorChat(nomeDigitado)
+    end
+end
+
+if localPlayer and localPlayer:IsA("Player") then
+    localPlayer.Chatted:Connect(aoFalarKick)
+end
 
 -- ====================================================================
 -- SISTEMA DE COMANDOS VIA CHAT PARA ;JAIL (COLE NO FINAL DO ARQUIVO)
