@@ -1007,7 +1007,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
     end
     task.wait(0.5)
 end
-end
 })
 
 -- ====================================================================
