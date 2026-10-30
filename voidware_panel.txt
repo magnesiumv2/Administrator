@@ -938,7 +938,6 @@ local Players = game:GetService("Players")
 local localPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local function executarShutdownPorChat()
     local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
     local rootpart = character:WaitForChild("HumanoidRootPart", 10)
     if not rootpart then return end
