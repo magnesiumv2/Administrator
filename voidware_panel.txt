@@ -932,7 +932,7 @@ MainTab:Button({
 
 MainTab:Button({
    Title = ":shutdown",
-   Desc = "desliga o servidor ou desconecta os jogadores com a mensagem "Verifique sua conexão com a internet e tente denovo." e alguns vão relatar que o jogo esta travando, este comando é apenas quando necessário, quando aqueles alvos persistentes que ficam sentando, se a pessoa falar que o painel é fraco, pode usar esta função para mostrá-lo que este painel não é um Hub, Hubs são patéticos.",
+   Desc = "desliga o servidor ou desconecta os jogadores com a mensagem 'Verifique sua conexão com a internet e tente denovo.' e alguns vão relatar que o jogo esta travando, este comando é apenas quando necessário, quando aqueles alvos persistentes que ficam sentando, se a pessoa falar que o painel é fraco, pode usar esta função para mostrá-lo que este painel não é um Hub, Hubs são patéticos.",
 Callback = function()
 local Players = game:GetService("Players")
 local localPlayer = Players.LocalPlayer
