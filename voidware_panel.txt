@@ -380,7 +380,7 @@ MainTab:Button({
                                 end
                             end
                             
-                            local props = trafficCones:GetChildren()
+                            local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                             
                             if #props > 0 then
                                 for _, prop in pairs(props) do
@@ -513,7 +513,7 @@ MainTab:Button({
                                 end
                             end
                             
-                            local props = trafficCones:GetChildren()
+                            local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                             
                             if #props > 0 then
                                 for _, prop in pairs(props) do
@@ -638,7 +638,7 @@ MainTab:Button({
                                 end
                             end
                             
-                            local props = trafficCones:GetChildren()
+                            local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                             
                             if #props > 0 then
                                 for _, prop in pairs(props) do
@@ -788,7 +788,7 @@ MainTab:Button({
                                 end
                             end
                             
-                            local props = trafficCones:GetChildren()
+                            local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                             
                             if #props > 0 then
                                 for _, prop in pairs(props) do
@@ -882,7 +882,7 @@ MainTab:Button({
                             destinoCFrame = pernaDireita.CFrame
                         end
                         
-                        local props = trafficCones:GetChildren()
+                        local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                         
                         if #props > 0 then
                             -- PASSO 1: Teleporta os props (trampolim) para a perna direita do alvo
@@ -1188,7 +1188,7 @@ local function executarKillPorChat(nomeDigitado)
                         end
                     end
                     
-                    local props = trafficCones:GetChildren()
+                    local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                     
                     if #props > 0 then
                         for _, prop in pairs(props) do
@@ -1399,7 +1399,7 @@ local function executarKickPorChat(nomeDigitado)
                         end
                     end
                     
-                    local props = trafficCones:GetChildren()
+                    local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                     
                     if #props > 0 then
                         for _, prop in pairs(props) do
@@ -1529,7 +1529,7 @@ local function executarJailPorChat(nomeDigitado)
                         end
                     end
                     
-                    local props = trafficCones:GetChildren()
+                    local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                     
                     if #props > 0 then
                         for _, prop in pairs(props) do
@@ -1637,7 +1637,7 @@ local function executarJumpPorChat(nomeDigitado)
                     destinoCFrame = pernaDireita.CFrame
                 end
                 
-                local props = trafficCones:GetChildren()
+                local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                 
                 if #props > 0 then
                     -- PASSO 1: Teleporta os props (trampolim) para a perna direita do alvo
@@ -1775,7 +1775,7 @@ local function executarBringPorChat(nomeDigitado)
                         end
                     end
                     
-                    local props = trafficCones:GetChildren()
+                    local props = {trafficCones:FindFirstChild("Prop" .. game.Players.LocalPlayer.Name)}
                     
                     if #props > 0 then
                         for _, prop in pairs(props) do
