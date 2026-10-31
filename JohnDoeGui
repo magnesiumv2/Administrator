@@ -445,3 +445,71 @@ task.spawn(function()
             end
         end)
 end)
+
+local Cmdbar = Instance.new("TextButton")
+Cmdbar.Name = "JohnDoe"
+Cmdbar.Parent = JohnDoeFrame
+Cmdbar.Position = UDim2.new(0, 0, 0, 0)
+Cmdbar.Size = UDim2.new(0, 50, 0, 35)
+Cmdbar.Text = "JohnDoe MT4"
+Cmdbar.TextColor3 = Color3.fromRGB(255, 0, 0)
+Cmdbar.TextSize = 5
+Cmdbar.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+Cmdbar.MouseButton1Click:Connect(function()
+local PlayerGui = game:GetService("Players").LocalPlayer.PlayerGui
+
+local Prompt = Instance.new("ScreenGui")
+Prompt.Name = "Console"
+Prompt.ResetOnSpawn = false
+Prompt.Parent = PlayerGui
+
+local Entry = Instance.new("Frame")
+Entry.Name = "Prompt"
+Entry.Parent = Prompt
+Entry.Position = UDim2.new(0, 186, 0, 305)
+Entry.Size = UDim2.new(0, 500, 0, 25)
+Entry.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Entry.BackgroundTransparency = 0.5
+
+local commandBar = Instance.new("TextBox")
+commandBar.Name = "cmdbar"
+commandBar.Parent = Entry
+commandBar.Position = UDim2.new(0, 0, 0, 0)
+commandBar.Text = ""
+commandBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+commandBar.BackgroundTransparency = 1
+commandBar.Size = UDim2.new(0, 500, 0, 25)
+commandBar.PlaceholderText = "command Line"
+commandBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+commandBar.TextSize = 5
+commandBar.TextXAlignment = Enum.TextXAlignment.Left
+
+local Executeline = Instance.new("TextButton")
+Executeline.Name = "Enter"
+Executeline.Parent = Entry
+Executeline.Position = UDim2.new(0, -9, 0, 0)
+Executeline.Size = UDim2.new(0, 8, 0, 25)
+Executeline.Text = ">"
+Executeline.TextColor3 = Color3.fromRGB(255, 255, 255)
+Executeline.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Executeline.BackgroundTransparency = 0.5
+Executeline.MouseButton1Click:Connect(function()
+local codigo =  commandBar.Text
+        if codigo == "" then return end
+
+        local sucesso, erro = pcall(function()
+            local func = loadstring(codigo)
+            if func then
+                func()
+            else
+                error("Syntax Error: The provided code is invalid.")
+            end
+        end)
+
+        if sucesso then
+            print("[Console]: Code executed successfully.")
+        else
+            warn("[Console Error]: " .. tostring(erro))
+        end
+    end)
+end)
